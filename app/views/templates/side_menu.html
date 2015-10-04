@@ -1,0 +1,159 @@
+<div class="panel-group" id="accordion">
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapseOne">Rota Analiz</a>
+            </h4>
+        </div>
+        <div id="collapseOne" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <form id="inputFrm">
+                    <label for="routeStartA"><b>Route A Start:</b></label>
+                    <input type="text" class="form-control" id="routeStartA" style="width: 250px">
+                    <label for="routeEndA"><b>Route A End:</b></label>
+                    <input type="text" class="form-control" id="routeEndA" style="width: 250px">
+                    <label for="routeStartB"><b>Route B Start:</b></label>
+                    <input type="text" class="form-control" id="routeStartB" style="width: 250px">
+                    <label for="routeEndB"><b>Route B End:</b></label>
+                    <input type="text" class="form-control" id="routeEndB" style="width: 250px">
+                    <label for="routeShapeA"><b>A Line:</b></label>
+                    <textarea class="form-control" rows="5" id="routeShapeA" style="width: 250px"></textarea>
+                    <label for="routeShapeB"><b>B Line:</b></label>
+                    <textarea class="form-control" rows="5" id="routeShapeB" style="width: 250px"></textarea>
+
+                    <div class="btn-group btn-group-justified">
+                        <button id="submitBtn" type="button" class="btn btn-info btn-primary">
+                            Calculate
+                            Intersection
+                        </button>
+                        <button id="makeIsochroneBtn" type="button" class="btn btn-warning btn-primary">
+                            Intersection
+                        </button>
+                        <button id="clearBtn" type="button" class="btn btn-danger btn-primary">
+                            Clear Map
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapseIsochrone">Isochrone Service</a>
+            </h4>
+        </div>
+        <div id="collapseIsochrone" class="panel-collapse collapse">
+            <div class="panel-body">
+                <form id="isochroneCalculationFrm">
+                    <label><b>Isoline For ?</b></label>
+
+                    <input type="checkbox" name="isoline-point" data-handle-width="80" data-on-text="Intersection"
+                           data-off-text="Passenger" data-size="mini" checked>
+
+                    <label><b>Role</b></label>
+
+                    <input type="checkbox" name="role" data-handle-width="80" data-on-text="Driver"
+                           data-off-text="Pedestrian" data-size="mini" checked>
+
+                    <label><b>Mode</b></label>
+
+                    <select class="selectpicker" multiple title='Choose Modes'>
+                        <option selected>shortest</option>
+                        <option>economic</option>
+                        <option>scenic</option>
+                        <option>directDrive</option>
+                        <option>shortestWalk</option>
+                        <option>leastChanges</option>
+                    </select>
+
+                    <label for="routeStartA"><b>Range Type</b></label>
+
+
+                    <input class="rangeTypeSwitch" type="checkbox" name="range-type" data-handle-width="80"
+                           data-on-text="Time"
+                           data-off-text="Distance" data-size="mini" checked>
+
+
+                    <div id="distanceDiv" class="hidden">
+                        <label for="distanceRangeInput"><b>Distance :</b></label>
+                        <input type="text" class="form-control" id="distanceRangeInput" style="width: auto">
+                    </div>
+
+                    <div id="timeDiv" class="show">
+                        <label for="timeRangeInput"><b>Time :</b></label>
+                        <input type="text" class="form-control" id="timeRangeInput" style="width: auto"
+                               placeholder="PT0H15M etc.">
+                    </div>
+
+
+                    <label for="reverseOrNot"><b>Reverse ?</b></label>
+
+                    <input class="reverseSwitch" type="checkbox" name="calculation-type" data-handle-width="80"
+                           id="reverseOrNot"
+                           data-on-text="Yes"
+                           data-off-text="No" data-size="mini">
+
+
+                    <label><b>Traffic Conditions</b></label>
+
+
+                    <input type="checkbox" name="traffic-condition" data-handle-width="80"
+                           data-on-text="Enabled"
+                           data-off-text="Disabled" data-size="mini">
+
+                    <br/>
+                    <br/>
+
+                    <div class="btn-group btn-group-justified">
+                        <button id="drawIsochroneBtn" type="button" class="btn btn-success btn-primary">
+                            Create Isochrone
+                        </button>
+                        <button id="resetDrawedOnes" type="button" class="btn btn-danger btn-primary">
+                            Reset All
+                        </button>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapseTwo">Simple Places</a>
+            </h4>
+        </div>
+        <div id="collapseTwo" class="panel-collapse collapse">
+            <div class="panel-body">
+                <form id="simpleInputFrm">
+                    <label for="routeStartA"><b>Radius :</b></label>
+                    <input type="text" class="form-control" id="radiusInput" style="width: auto">
+                    <br/>
+
+                    <div class="btn-group btn-group-justified">
+                        <button id="findPlacesSimpleBtn" type="button" class="btn btn-success btn-primary">
+                            Find Places
+                        </button>
+
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">3. What is CSS?</a>
+            </h4>
+        </div>
+        <div id="collapseThree" class="panel-collapse collapse">
+            <div class="panel-body">
+                <p>CSS stands for Cascading Style Sheet. CSS allows you to specify various style properties for a
+                    given HTML element such as colors, backgrounds, fonts etc. <a
+                            href="http://www.tutorialrepublic.com/css-tutorial/" target="_blank">Learn more.</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
