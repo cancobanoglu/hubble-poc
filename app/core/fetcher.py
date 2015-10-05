@@ -40,9 +40,13 @@ Base.metadata.create_all(engine)
 # establish conversation between database
 _session = Session()
 
+
 def get_session():
     return Session()
 
+
+def get_connection():
+    return engine.connect()
 
 # '180', 'geo!41.078414,29.012468'
 def do_request_for_reverse_isoline(range, destionation_point):
@@ -337,11 +341,12 @@ cat = {
     # 'restaurant',
     # 'coffee-tea',
     # 'snacks-fast-food'
-    'going-out',
-    'sights-museums',
+    # 'going-out',
+    # 'sights-museums',
+    'business-services',
     # 'transport',
     # 'airport',
-    'accommodation',
+    # 'accommodation',
     # 'shopping',
     # 'leisure-outdoor',
     # 'administrative-areas-buildings',
@@ -358,6 +363,6 @@ cat = {
 # create_input_for_multi_reverse_geocoding(PoiType.PLACES)
 
 
-def find_places():
-    pt_stops = _session.query(TagPtStops).all()
-    return pt_stops
+# def find_places():
+#     pt_stops = _session.query(TagPtStops).all()
+#     return pt_stops
