@@ -19,9 +19,7 @@ for path in paths:
 
 os.chdir(currentPath)
 
-from controllers import analyze
-
-
+from controllers import analyze, home
 
 #
 # Add view paths to the Bottle template path
@@ -61,5 +59,5 @@ def serve_static(filepath):
 bottle.debug(config.DEBUG)
 app__ = bottle.app()
 
-bottle.run(host="localhost", port=config.BIND_TO_PORT, workers=4, proc_name="APP",
+bottle.run(host="0.0.0.0", port=config.BIND_TO_PORT, workers=4, proc_name="APP",
            daemon=True)

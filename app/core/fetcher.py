@@ -1,15 +1,14 @@
 __author__ = 'cancobanoglu'
 
+import requests
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
 from geoalchemy2 import WKTElement
-from shapely.geometry import asPoint, asPolygon, Polygon
+from shapely.geometry import asPoint, asPolygon
 
-
-import requests
 from api_urls import *
-from models import *
-
+from app.dao.models import *
 from map_grid_creator import *
 
 DB_SETTINGS = dict(
@@ -363,6 +362,6 @@ cat = {
 # create_input_for_multi_reverse_geocoding(PoiType.PLACES)
 
 
-# def find_places():
-#     pt_stops = _session.query(TagPtStops).all()
-#     return pt_stops
+def find_places():
+    pt_stops = _session.query(TagPtStops).all()
+    return pt_stops

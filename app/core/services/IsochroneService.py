@@ -1,5 +1,5 @@
 __author__ = 'cancobanoglu'
-from api_urls import *
+from app.core.api_urls import *
 
 
 class IsochroneService:
@@ -50,9 +50,8 @@ class IsochroneService:
     def execute(self):
         url = self.build_isoline_url()
 
-
-iso_service = IsochroneService()
-iso_service.set_mode('fastest;pedestrian;traffic:enabled')
-iso_service.set_range('1000')
-iso_service.set_destination_point('41.20,23,34')
-iso_service.execute()
+# iso_service = IsochroneService()
+# iso_service.set_mode('fastest;pedestrian;traffic:enabled')
+# iso_service.set_range('1000')
+# iso_service.set_destination_point('41.20,23,34')
+# iso_service.execute()

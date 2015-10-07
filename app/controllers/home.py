@@ -2,6 +2,6 @@ from bottle import view, route, request
 
 
 @route("/home")
-@view("home")
+@view("public_transport_route")
 def home():
-    return 'asdasa'
+    return dict()

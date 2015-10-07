@@ -1,14 +1,14 @@
-from sqlalchemy import select
-
 __author__ = 'cancobanoglu'
 
-from bottle import route, template, view
-from bottle import get, post, request  # or route
-from app.core.geomety_utils import *
-from app.core.fetcher import *
-from bottle import response
 from json import dumps
 import json
+
+from bottle import route, template
+from bottle import request  # or route
+from bottle import response
+
+from app.core.utils.geomety_utils import *
+from app.core.fetcher import *
 
 DBSession = get_session()
 
@@ -101,29 +101,6 @@ def buffered_route_polygon():
     response.content_type = 'application/json'
     return dumps(resp)
 
-
-def within_clause(tablename, latitude, longitude, distance):
-    """Return a within clause that explicitly casts the `latitude` and
-      `longitude` provided to geography type.
-    """
-
-    attr = '%s.location' % tablename
-
-    point = 'POINT(%0.8f %0.8f)' % (longitude, latitude)
-    location = "ST_GeographyFromText(E'SRID=4326;%s')" % point
-
-    return 'ST_DWithin(%s, %s, %d)' % (attr, location, distance)
-
-
-def buffer_clause(wkt, radius_of_buffer):
-    """Return a buffered polygon
-    """
-
-    clause = "ST_AsText(ST_Buffer(ST_GeographyFromText(E'SRID=4326;%s'),%s)) as buffered_polygon" % (
-        wkt, radius_of_buffer)
-    print clause
-
-    return clause
 
 #
 # a = buffer_clause(

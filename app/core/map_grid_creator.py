@@ -2,12 +2,11 @@ __author__ = 'cancobanoglu'
 import math
 from matrix import Matrix
 
-DISTANCE_BETWEEN_POINT = 0.02 # 0.88 km
+DISTANCE_BETWEEN_POINT = 0.02  # 0.88 km
 START_POINT_LAT = 41.35954
 START_POINT_LNG = 28.49873
 SCAN_AREA_AXIS = 70
 SCAN_AREA_ORDINATE = 70
-
 
 
 def distance_on_unit_sphere(lat1, long1, lat2, long2):
@@ -84,7 +83,8 @@ def create_grid_matrix(lat, lng, max_distance_lng, max_distance_lat, distance_be
 def create_boundingbox_rect_list():
     # first two lat and long point is a randomly selected left top point of istanbul map
     # grid_matrix is tuples - which hold lat long point within it - matrix
-    grid_matrix = create_grid_matrix(START_POINT_LAT, START_POINT_LNG, SCAN_AREA_AXIS, SCAN_AREA_ORDINATE, DISTANCE_BETWEEN_POINT)
+    grid_matrix = create_grid_matrix(START_POINT_LAT, START_POINT_LNG, SCAN_AREA_AXIS, SCAN_AREA_ORDINATE,
+                                     DISTANCE_BETWEEN_POINT)
 
     # rule of getting bounding box point values of matrix .
     # bounding box specified as 4 values, denoting west longitude, south latitude, east longitude, north latitude.
@@ -100,8 +100,8 @@ def create_boundingbox_rect_list():
             if __row == (row - 1):
                 break
             str_bbox = grid_matrix[__row + 1][__col - 1][0] + ',' + \
-                   grid_matrix.__getitem__(__row + 1)[__col - 1][1] + ',' + \
-                   grid_matrix.__getitem__(__row)[__col][0] + ',' + grid_matrix.__getitem__(__row)[__col][1]
+                       grid_matrix.__getitem__(__row + 1)[__col - 1][1] + ',' + \
+                       grid_matrix.__getitem__(__row)[__col][0] + ',' + grid_matrix.__getitem__(__row)[__col][1]
             bbox_str_list.append(str_bbox)
 
     return bbox_str_list

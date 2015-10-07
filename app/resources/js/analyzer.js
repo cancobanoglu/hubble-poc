@@ -230,10 +230,51 @@
         intersectionPointLong = longitude;
 
         var ic = new H.map.Icon('http://download.st.vcdn.nokia.com/p/d/places2_stg/icons/categories/21.icon');
+
         var intersectionPointMarker = new H.map.Marker({
             lat: latitude,
             lng: longitude
         }, {icon: ic});
+
+
+        intersectionPointMarker.draggable = true;
+        intersectionPointMarker.addEventListener('dragstart', function (e) {
+            //handle drag start here
+            console.log(e);
+        });
+        intersectionPointMarker.addEventListener('drag', function (e) {
+            //handle drag here
+        });
+        intersectionPointMarker.addEventListener('dragend', function (e) {
+            var spatial = e.target;
+            intersectionPointLat = spatial.getPosition().lat;
+            intersectionPointLong = spatial.getPosition().lng;
+        });
+
+        map.addEventListener('dragstart', function (ev) {
+            var target = ev.target;
+            if (target instanceof H.map.Marker) {
+                behavior.disable();
+            }
+        }, false);
+
+        map.addEventListener('dragend', function (ev) {
+            var target = ev.target;
+            if (target instanceof mapsjs.map.Marker) {
+                behavior.enable();
+            }
+        }, false);
+
+        map.addEventListener('drag', function (ev) {
+            var target = ev.target,
+                pointer = ev.currentPointer;
+            if (target instanceof mapsjs.map.Marker) {
+                var newPosition = map.screenToGeo(pointer.viewportX, pointer.viewportY);
+                target.setPosition(newPosition);
+            }
+        }, false);
+
+
         group.addObject(intersectionPointMarker);
         map.setCenter({lat: latitude, lng: longitude});
         map.setZoom(15);

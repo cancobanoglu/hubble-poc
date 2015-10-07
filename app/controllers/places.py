@@ -1,17 +1,12 @@
 __author__ = 'cancobanoglu'
 
 from bottle import route, run, template, view
-from bottle import get, post, request  # or route
-
-from bottle import error
 from app.core.fetcher import *
-from app.core.geomety_utils import *
-import json
 
 
 @route('/place')
 @view('pt_stops')
-def hello(name='World'):
+def index(name='World'):
     return dict(name=name)
 
 
@@ -22,7 +17,7 @@ def get_places():
 
     pt_stops = find_places()
 
-    resp = [{'position': [41.02, 29.06013]}]
+    resp = []
 
     for stop in pt_stops:
         resp.append({'position': [stop.lat, stop.lng], 'name': stop.name})

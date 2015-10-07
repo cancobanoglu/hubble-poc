@@ -1,11 +1,9 @@
 __author__ = 'cancobanoglu'
 
-
 import pyproj
 from shapely.ops import transform
 from functools import partial
 from shapely.geometry import asLineString, Point
-from geoalchemy2.shape import from_shape
 from shapely.wkt import loads
 
 
@@ -27,7 +25,8 @@ def make_linestring(routeShape):
 
 WGS84 = pyproj.Proj(init='epsg:4326')
 
-def latlonbuffer(lat, lon, radius_m):
+
+def lat_lon_buffer(lat, lon, radius_m):
     proj4str = '+proj=aeqd +lat_0=%s +lon_0=%s +x_0=0 +y_0=0' % (lat, lon)
     AEQD = pyproj.Proj(proj4str)
     project = partial(pyproj.transform, AEQD, WGS84)
@@ -36,3 +35,27 @@ def latlonbuffer(lat, lon, radius_m):
 
 def to_shape(wkt):
     return loads(wkt)
+
+
+def within_clause(tablename, latitude, longitude, distance):
+    """Return a within clause that explicitly casts the `latitude` and
+      `longitude` provided to geography type.
+    """
+
+    attr = '%s.location' % tablename
+
+    point = 'POINT(%0.8f %0.8f)' % (longitude, latitude)
+    location = "ST_GeographyFromText(E'SRID=4326;%s')" % point
+
+    return 'ST_DWithin(%s, %s, %d)' % (attr, location, distance)
+
+
+def buffer_clause(wkt, radius_of_buffer):
+    """Return a buffered polygon
+    """
+
+    clause = "ST_AsText(ST_Buffer(ST_GeographyFromText(E'SRID=4326;%s'),%s)) as buffered_polygon" % (
+        wkt, radius_of_buffer)
+    print clause
+
+    return clause
