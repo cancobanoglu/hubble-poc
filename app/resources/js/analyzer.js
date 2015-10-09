@@ -61,6 +61,18 @@
         'representation': 'display'
     };
 
+    var routingParametersPedestrian = {
+        // The routing mode:
+        'mode': 'shortestWalk',
+        // The start point of the route:
+        'waypoint0': '',
+        // The end point of the route:
+        'waypoint1': '',
+        // To retrieve the shape of the route we choose the route
+        // representation mode 'display'
+        'representation': 'display'
+    };
+
 // Define a callback function to process the routing response:
     var onResultA = function (result) {
         var route,
@@ -189,8 +201,8 @@
             group.addObject(passengerRouteEnd);
             routingParameters.waypoint1 = passengerRouteEnd.getPosition().lat + ',' + passengerRouteEnd.getPosition().lng;
             setInput('routeEndB', routingParameters.waypoint1);
-            drawRouteB();
-
+//            drawRouteB();
+            drawPedestrian();
         }
     });
 
@@ -203,6 +215,13 @@
 
     function drawRouteB() {
         router.calculateRoute(routingParameters, onResultB,
+            function (error) {
+                alert(error.message);
+            });
+    }
+
+    function drawPedestrian() {
+        router.calculateRoute(routingParametersPedestrian, onResultB,
             function (error) {
                 alert(error.message);
             });
