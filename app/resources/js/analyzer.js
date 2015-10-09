@@ -63,7 +63,7 @@
 
     var routingParametersPedestrian = {
         // The routing mode:
-        'mode': 'shortestWalk',
+        'mode': 'shortest;pedestrian',
         // The start point of the route:
         'waypoint0': '',
         // The end point of the route:
@@ -194,13 +194,13 @@
         } else if (passengerRouteStart == null) {
             passengerRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'YB', 'Yolcunun başlangıç noktası', '', 'http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Walking-icon.png');
             group.addObject(passengerRouteStart);
-            routingParameters.waypoint0 = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
-            setInput('routeStartB', routingParameters.waypoint0);
+            routingParametersPedestrian.waypoint0 = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
+            setInput('routeStartB', routingParametersPedestrian.waypoint0);
         } else if (passengerRouteEnd == null) {
             passengerRouteEnd = new H.map.Marker(click_coords);
             group.addObject(passengerRouteEnd);
-            routingParameters.waypoint1 = passengerRouteEnd.getPosition().lat + ',' + passengerRouteEnd.getPosition().lng;
-            setInput('routeEndB', routingParameters.waypoint1);
+            routingParametersPedestrian.waypoint1 = passengerRouteEnd.getPosition().lat + ',' + passengerRouteEnd.getPosition().lng;
+            setInput('routeEndB', routingParametersPedestrian.waypoint1);
 //            drawRouteB();
             drawPedestrian();
         }
