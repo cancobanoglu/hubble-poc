@@ -19,6 +19,9 @@ for path in paths:
 
 os.chdir(currentPath)
 
+
+print sys.path
+
 from controllers import analyze, home
 
 #

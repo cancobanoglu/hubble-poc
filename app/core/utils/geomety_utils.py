@@ -5,6 +5,7 @@ from shapely.ops import transform
 from functools import partial
 from shapely.geometry import asLineString, Point
 from shapely.wkt import loads
+from geoalchemy2 import WKTElement
 
 
 def make_linestring(routeShape):
@@ -35,6 +36,10 @@ def lat_lon_buffer(lat, lon, radius_m):
 
 def to_shape(wkt):
     return loads(wkt)
+
+
+def wkt_element(object):
+    return WKTElement('SRID=4326; ' + object.wkt)
 
 
 def within_clause(tablename, latitude, longitude, distance):

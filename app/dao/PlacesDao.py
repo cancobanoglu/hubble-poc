@@ -4,7 +4,7 @@ import models
 
 
 class PlacesDao(db.DAO):
-    def merge(self, here_id, place=models.TagPlaces):
+    def merge(self, place=models.TagPlaces):
         '''
         first check whether or not there is an already persisted object with given here_id
 
@@ -13,7 +13,7 @@ class PlacesDao(db.DAO):
         '''
         session = self.get_session()
         try:
-            q = session.query(models.TagPlaces).filter(models.TagPlaces.here_id == here_id)
+            q = session.query(models.TagPlaces).filter(models.TagPlaces.here_id == place.here_id)
             one = q.one()
             if one is None:
                 session.add(place)

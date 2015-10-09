@@ -14,3 +14,8 @@ DB_SETTINGS = dict(
     db_host='localhost',
     db_port=5432
 )
+
+HERE_APP_ACCESS = dict(
+    app_id="kvTMp5y2JFGERc9pWR6o",
+    app_code="PBy3H_B24TMLr03MECgKFQ"
+)
