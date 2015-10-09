@@ -10,6 +10,22 @@ import requests, config
 '''
 
 
+class ModeType:
+    def __init__(self):
+        pass
+
+    PEDESTRIAN = 0
+    DRIVER = 1
+
+
+class RangeType:
+    def __init__(self):
+        pass
+
+    TIME = 'time'
+    DISTANCE = 'distance'
+
+
 class HereIsochroneService:
     access = config.HERE_APP_ACCESS
     param_dict = dict(
@@ -113,22 +129,6 @@ class HereIsochroneService:
         p = asPolygon(point_list)
 
         return p
-
-
-class ModeType:
-    def __init__(self):
-        pass
-
-    PEDESTRIAN = 0
-    DRIVER = 1
-
-
-class RangeType:
-    def __init__(self):
-        pass
-
-    TIME = 'time'
-    DISTANCE = 'distance'
 
 # iso_service = HereIsochroneService()
 # iso_service.set_mode('fastest;pedestrian;traffic:enabled')

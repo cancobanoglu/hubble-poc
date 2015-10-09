@@ -3,7 +3,10 @@ import db
 from models import PoiIsochrones
 
 
-class IsochroneDao(db.DAO):
+class IsochroneDao:
+    def __init__(self):
+        pass
+
     def merge(self, here_id, isochrone_polygon):
 
         session = self.get_session()

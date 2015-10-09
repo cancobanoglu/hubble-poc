@@ -43,14 +43,18 @@ class TagPlaces(Base):
 
 
 class PoiIsochrones(Base):
-    __tablename__ = 'isochone_poi'
+    __tablename__ = 'isochrone_poi'
 
     id = Column(Integer, primary_key=True)
     type = Column(String)
     here_id = Column(String, unique=True)
+    # all Reverse isochrones
     geom_3min_isoline = Column(Geometry('POLYGON', srid=4326))
     geom_5min_isoline = Column(Geometry('POLYGON', srid=4326))
     geom_10min_isoline = Column(Geometry('POLYGON', srid=4326))
+    driver_one_min_isoline = Column(Geometry('POLYGON', srid=4326))
+    driver_three_min_isoline = Column(Geometry('POLYGON', srid=4326))
+    driver_five_min_isoline = Column(Geometry('POLYGON', srid=4326))
 
 
 class PoiNearestRoutes(Base):

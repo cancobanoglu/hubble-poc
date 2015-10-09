@@ -3,15 +3,18 @@ import db
 import models
 
 
-class PlacesDao(db.DAO):
-    def merge(self, place=models.TagPlaces):
+class PlacesDao:
+    def __init__(self):
+        pass
+
+    @staticmethod
+    def merge(self, session, place=models.TagPlaces):
         '''
         first check whether or not there is an already persisted object with given here_id
 
         :param place: filled TagPlaces object
         :return: nothing
         '''
-        session = self.get_session()
         try:
             q = session.query(models.TagPlaces).filter(models.TagPlaces.here_id == place.here_id)
             one = q.one()
@@ -25,3 +28,9 @@ class PlacesDao(db.DAO):
             pass
 
         session.commit()
+
+    def find_all(self, session):
+        return session.query(models.TagPlaces).all()
+
+    def find_one(self, session):
+        return session.query(models.TagPlaces).first()

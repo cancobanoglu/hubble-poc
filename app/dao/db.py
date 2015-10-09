@@ -23,14 +23,9 @@ session = scoped_session(sessionmaker(bind=engine))
 Base.metadata.create_all(engine)
 
 
-class DAO:
-    def __init__(self):
-        pass
+def get_session():
+    return session()  # establish conversation between database
 
-    @staticmethod
-    def get_session():
-        return session()  # establish conversation between database
 
-    @staticmethod
-    def get_connection():
-        return engine.connect()
+def get_connection():
+    return engine.connect()
