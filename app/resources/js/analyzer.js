@@ -7,9 +7,11 @@
     $("[name='range-type']").bootstrapSwitch('state');
     $("[name='calculation-type']").bootstrapSwitch('state');
     $("[name='isoline-point']").bootstrapSwitch('state');
+    $("[name='route-type']").bootstrapSwitch('state');
     $('select').selectpicker();
 
-    var colors = ['blue', 'green', 'red', 'grey', '#FF4433', '#CC0022', '#B00022', '#180022', '#FA0022', '#E5FFCC'];
+    var colorRed = 'red';
+    var colorBlue = 'blue';
     var intersectionPointLat, intersectionPointLong;
 
     var platform = new H.service.Platform({
@@ -44,6 +46,7 @@
     // Add the group object to the map:
     map.addObject(group);
 
+    var passangerRouteLine;
 
     var driverRouteStart, driverRouteEnd, passengerRouteStart, passengerRouteEnd, driverRouteShape, passengerRouteShape;
 
@@ -52,18 +55,6 @@
     var routingParameters = {
         // The routing mode:
         'mode': 'fastest;car',
-        // The start point of the route:
-        'waypoint0': '',
-        // The end point of the route:
-        'waypoint1': '',
-        // To retrieve the shape of the route we choose the route
-        // representation mode 'display'
-        'representation': 'display'
-    };
-
-    var routingParametersPedestrian = {
-        // The routing mode:
-        'mode': 'shortest;pedestrian',
         // The start point of the route:
         'waypoint0': '',
         // The end point of the route:
@@ -98,9 +89,8 @@
             startPoint = route.waypoint[0].mappedPosition;
             endPoint = route.waypoint[1].mappedPosition;
             // Create a polyline to display the route:
-            randomColor = colors[random()];
             var routeLine = new H.map.Polyline(strip, {
-                style: {strokeColor: randomColor, lineWidth: 7},
+                style: {strokeColor: colorRed, lineWidth: 7},
                 arrows: {fillColor: 'white', frequency: 2, width: 0.5, length: 0.7}
             });
             //// Create a marker for the start point:
@@ -145,9 +135,8 @@
             startPoint = route.waypoint[0].mappedPosition;
             endPoint = route.waypoint[1].mappedPosition;
             // Create a polyline to display the route:
-            randomColor = colors[random()];
-            var routeLine = new H.map.Polyline(strip, {
-                style: {strokeColor: randomColor, lineWidth: 7},
+            passangerRouteLine = new H.map.Polyline(strip, {
+                style: {strokeColor: colorBlue, lineWidth: 7},
                 arrows: {fillColor: 'white', frequency: 2, width: 0.5, length: 0.7}
             });
             //// Create a marker for the start point:
@@ -162,9 +151,9 @@
             //});
 
             // Add the route polyline and the two markers to the map:
-            map.addObjects([routeLine]);
+            map.addObjects([passangerRouteLine]);
             // Set the map's viewport to make the whole route visible:
-            map.setViewBounds(routeLine.getBounds());
+            map.setViewBounds(passangerRouteLine.getBounds());
         }
     };
 
@@ -194,15 +183,14 @@
         } else if (passengerRouteStart == null) {
             passengerRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'YB', 'Yolcunun başlangıç noktası', '', 'http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Walking-icon.png');
             group.addObject(passengerRouteStart);
-            routingParametersPedestrian.waypoint0 = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
-            setInput('routeStartB', routingParametersPedestrian.waypoint0);
+            routingParameters.waypoint0 = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
+            setInput('routeStartB', routingParameters.waypoint0);
         } else if (passengerRouteEnd == null) {
             passengerRouteEnd = new H.map.Marker(click_coords);
             group.addObject(passengerRouteEnd);
-            routingParametersPedestrian.waypoint1 = passengerRouteEnd.getPosition().lat + ',' + passengerRouteEnd.getPosition().lng;
-            setInput('routeEndB', routingParametersPedestrian.waypoint1);
-//            drawRouteB();
-            drawPedestrian();
+            routingParameters.waypoint1 = passengerRouteEnd.getPosition().lat + ',' + passengerRouteEnd.getPosition().lng;
+            setInput('routeEndB', routingParameters.waypoint1);
+            drawRouteB();
         }
     });
 
@@ -214,17 +202,25 @@
     }
 
     function drawRouteB() {
-        router.calculateRoute(routingParameters, onResultB,
-            function (error) {
-                alert(error.message);
-            });
+        var routeType = $("[name='route-type']").bootstrapSwitch('state');
+        console.log(routeType);
+        if (routeType) {
+            routingParameters.mode = "fastest;car";
+            router.calculateRoute(routingParameters, onResultB,
+                function (error) {
+                    alert(error.message);
+                });
+        } else {
+            routingParameters.mode = "shortest;pedestrian";
+            router.calculateRoute(routingParameters, onResultB,
+                function (error) {
+                    alert(error.message);
+                });
+        }
     }
 
     function drawPedestrian() {
-        router.calculateRoute(routingParametersPedestrian, onResultB,
-            function (error) {
-                alert(error.message);
-            });
+
     }
 
     function eventToLocation(event) {
@@ -389,6 +385,11 @@
             group.addObject(marker);
         });
     }
+
+    $('.routeTypeSwitch').on('switchChange.bootstrapSwitch', function (event, state) {
+        map.removeObject(passangerRouteLine);
+        drawRouteB();
+    });
 
 
     $('.rangeTypeSwitch').on('switchChange.bootstrapSwitch', function (event, state) {
