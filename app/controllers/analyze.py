@@ -33,7 +33,7 @@ def calculate_intersection():
 
     point = None
 
-    for _p in route_shape_driver:
+    for _p in route_shape_passenger:
         point = asPoint([float(coord) for coord in _p.split(",")])
         if point.within(intersected_shapes):
             break
