@@ -1,3 +1,5 @@
+from shapely.geometry.point import asPoint
+
 __author__ = 'cancobanoglu'
 
 from json import dumps
@@ -8,14 +10,22 @@ from bottle import request  # or route
 from bottle import response
 
 from app.core.utils.geomety_utils import *
-from app.core.fetcher import *
+# from app.core.fetcher import *
+from app.dao import db, models
+from app.dao.IsochroneDao import *
 
-DBSession = get_session()
+isochrone_dao = IsochroneDao()
+DBSession = db.get_session()
 
 
 @route('/analyze')
 def index():
     return template('analyze')
+
+
+@route('/analyze/bufferedArea')
+def index_buffered_area():
+    return template('analyze_route_buffer')
 
 
 @route('/analyze/intersection', method='POST')
@@ -55,7 +65,7 @@ def within():
 
     clause = within_clause('poi_place', point_lat, point_lon, radius)
     print clause
-    query = DBSession.query(TagPlaces).filter(clause)
+    query = DBSession.query(models.TagPlaces).filter(clause)
     place_list = query.all()
 
     items = []
@@ -65,7 +75,7 @@ def within():
 
     pt_stops_clause = within_clause('poi_pt_stop', point_lat, point_lon, radius)
     print pt_stops_clause
-    query = DBSession.query(TagPtStops).filter(pt_stops_clause)
+    query = DBSession.query(models.TagPtStops).filter(pt_stops_clause)
     pt_stop_list = query.all()
 
     for stop in pt_stop_list:
@@ -87,7 +97,7 @@ def buffered_route_polygon():
     line_string_driver = make_linestring(route_shape_driver)
     buffered_route_clause = 'SELECT ' + buffer_clause(line_string_driver, buff)
 
-    result = get_connection().execute(buffered_route_clause)
+    result = db.get_connection().execute(buffered_route_clause)
     data = result.fetchone()
     polygon_shape = to_shape(data[0])
 
@@ -100,6 +110,37 @@ def buffered_route_polygon():
 
     response.content_type = 'application/json'
     return dumps(resp)
+
+
+@route("/analyze/route/buffer/places", method='POST')
+def places_within_buffer():
+    response_body = json.load(request.body)
+    buffered_route_shape = response_body.get('buffered_area')
+
+    polygon = make_polygon(buffered_route_shape)
+
+    clause = contains_clause_within_polyhon(polygon.wkt)
+
+    data = db.get_connection().execute(clause)
+
+    items = []
+    for row in data:
+        items.append({'name': row.name, 'position': [row.lat, row.lng], 'source_id': row.here_id})
+
+    resp = dict()
+    resp['items'] = items
+
+    response.content_type = 'application/json'
+    return dumps(resp)
+
+
+@route("/analyze/route/buffer/isolines/<range>", method='POST')
+def get_isoline_of_places(range):
+    print range
+    response_body = json.load(request.body)
+    source_ids = response_body.get('source_ids')
+
+    isochrone_dao.find_by_source_ids(range, source_ids)
 
 
 #

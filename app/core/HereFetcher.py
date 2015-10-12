@@ -8,6 +8,7 @@ import app.dao.db as db
 
 isochrone_dao = IsochroneDao()
 here_isochrone_service = HereIsochroneService()
+here_reverse_isochrone_service = HereReverseIsochrone()
 here_places_service = HerePlaceService()
 
 
@@ -15,7 +16,7 @@ class HereFetcher:
     def __init__(self):
         pass
 
-    def make_isochrone(self, __range, reverse, place=TagPlaces, mode=ModeType, range_type=RangeType):
+    def make_isochrone(self, target, reverse, place=TagPlaces, mode=ModeType, range_type=RangeType):
         '''
         :param __range: range could be time or distances based value, if range type is time than range must be seconds
         :param place:
@@ -23,12 +24,20 @@ class HereFetcher:
         :param range_type:
         :return:
         '''
-        self.here_isochrone_service.set_lat_lng(place.lat, place.lng)
-        self.here_isochrone_service.set_mode(mode)
-        self.here_isochrone_service.set_range_type(range_type)
-        self.here_isochrone_service.set_range(__range)
 
-        parsed_polygon_wkt = here_isochrone_service.parse_polygon(True, reverse)
+        if not reverse:
+            here_isochrone_service.set_lat_lng(place.lat, place.lng)
+            here_isochrone_service.set_mode(mode)
+            here_isochrone_service.set_range_type(range_type)
+            here_isochrone_service.set_range(target)
+
+            parsed_polygon_wkt = here_isochrone_service.parse_polygon(True)
+        else:
+            here_reverse_isochrone_service.set_mode(mode)
+            here_reverse_isochrone_service.set_lat_lng(place.lat, place.lng)
+            here_reverse_isochrone_service.set_range(target)
+
+            parsed_polygon_wkt = here_reverse_isochrone_service.parse_polygon(True)
 
         return parsed_polygon_wkt
 
@@ -50,7 +59,7 @@ class HereFetcher:
     def create_five_min_iso_driver(self, reverse, place=TagPlaces):
         return self.make_isochrone(300, True, place, ModeType.DRIVER, RangeType.TIME)
 
-    def create_pedestrian_reverse_isos(self, place=TagPlaces):
+    def pedestrian_reverse_isolines(self, place=TagPlaces):
         three_mins = self.create_three_min_iso_pedestrian(True, place)
         five_mins = self.create_five_min_iso_pedestrian(True, place)
         ten_mins = self.create_ten_min_iso_pedestrian(True, place)
@@ -60,13 +69,14 @@ class HereFetcher:
 
         isochrone_dao.merge(place.here_id, isochrone)
 
-    def create_driver_reverse_isos(self, place=TagPlaces, isochrone=PoiIsochrones):
+    def car_reverse_isolines(self, place=TagPlaces, isochrone=PoiIsochrones):
         one_min = self.create_one_min_iso_driver(True, place)
         three_min = self.create_three_min_iso_driver(True, place)
         five_min = self.create_five_min_iso_driver(True, place)
 
         if isochrone is None:
-            iso = PoiIsochrones(type=PoiType.PLACES, here_id=place.here_id, driver_one_min_isoline=one_min,
+            iso = PoiIsochrones(type=PoiType.PLACES, source_id=place.here_id, source='HERE',
+                                driver_one_min_isoline=one_min,
                                 driver_three_min_isoline=three_min, driver_five_min_isoline=five_min)
             isochrone_dao.merge(place.here_id, iso)
         else:
@@ -76,7 +86,7 @@ class HereFetcher:
 
             isochrone_dao.merge(place.here_id, isochrone)
 
-    def fetch_places_by_in(self, ):
+    def fetch_places_by_in(self):
         self.here_places_service.set_radius()
 
     def explore_places_by_bbox(self, *cat):
@@ -91,10 +101,15 @@ class HereFetcher:
                 print 'Error: %s' % str(err)
                 print 'Latest bbox position :' + str(box)
 
+    def fetch_place_categories(self):
+        pass
 
-here_fetcher = HereFetcher()
-place_dao = PlacesDao()
-session = db.get_session()
-l = place_dao.find_one(session)
 
-here_fetcher.create_pedestrian_reverse_isos(l)
+if __name__ == '__main__':
+    here_fetcher = HereFetcher()
+    place_dao = PlacesDao()
+    session = db.get_session()
+    place_list = place_dao.find_all(session)
+
+    for place in place_list:
+        here_fetcher.car_reverse_isolines(place, None)

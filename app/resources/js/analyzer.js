@@ -98,7 +98,7 @@
             startPoint = route.waypoint[0].mappedPosition;
             endPoint = route.waypoint[1].mappedPosition;
             // Create a polyline to display the route:
-            randomColor = colors[random()];
+            var randomColor = colors[random()];
             var routeLine = new H.map.Polyline(strip, {
                 style: {strokeColor: randomColor, lineWidth: 7},
                 arrows: {fillColor: 'white', frequency: 2, width: 0.5, length: 0.7}

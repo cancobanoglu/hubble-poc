@@ -1,3 +1,5 @@
+from geoalchemy2.types import Geography
+
 __author__ = 'cancobanoglu'
 
 from sqlalchemy import Column, DateTime, String, Integer, ForeignKey, func, Float
@@ -43,18 +45,20 @@ class TagPlaces(Base):
 
 
 class PoiIsochrones(Base):
-    __tablename__ = 'isochrone_poi'
+    __tablename__ = 'poi_isoline'
 
     id = Column(Integer, primary_key=True)
     type = Column(String)
-    here_id = Column(String, unique=True)
+    source_id = Column(String, unique=True)
+    # now just HERE
+    source = Column(String)
     # all Reverse isochrones
-    geom_3min_isoline = Column(Geometry('POLYGON', srid=4326))
-    geom_5min_isoline = Column(Geometry('POLYGON', srid=4326))
-    geom_10min_isoline = Column(Geometry('POLYGON', srid=4326))
-    driver_one_min_isoline = Column(Geometry('POLYGON', srid=4326))
-    driver_three_min_isoline = Column(Geometry('POLYGON', srid=4326))
-    driver_five_min_isoline = Column(Geometry('POLYGON', srid=4326))
+    geom_3min_isoline = Column(Geography('POLYGON'))
+    geom_5min_isoline = Column(Geography('POLYGON'))
+    geom_10min_isoline = Column(Geography('POLYGON'))
+    driver_one_min_isoline = Column(Geography('POLYGON'))
+    driver_three_min_isoline = Column(Geography('POLYGON'))
+    driver_five_min_isoline = Column(Geography('POLYGON'))
 
 
 class PoiNearestRoutes(Base):

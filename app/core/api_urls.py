@@ -182,5 +182,5 @@ def build_reverse_geocoding_url(center_point):
 
     return request_url
 
-
-print build_reverse_geocoding_url('41.022435,29.058573')
+if __name__ == '__main__':
+    print build_reverse_geocoding_url('41.022435,29.058573')

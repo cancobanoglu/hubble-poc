@@ -1,3 +1,5 @@
+from shapely.geometry.polygon import asPolygon
+
 __author__ = 'cancobanoglu'
 
 import pyproj
@@ -8,11 +10,11 @@ from shapely.wkt import loads
 from geoalchemy2 import WKTElement
 
 
-def make_linestring(routeShape):
-    point_list = [None] * len(routeShape)
+def make_linestring(route_shape):
+    point_list = [None] * len(route_shape)
     counter = 0
 
-    for point in routeShape:
+    for point in route_shape:
         lat_lng = [float(coord) for coord in point.split(",")]
         point_list.insert(counter, lat_lng)
         counter += 1
@@ -22,6 +24,20 @@ def make_linestring(routeShape):
     linestring = asLineString(point_list)
 
     return linestring
+
+
+def make_polygon(buffered_route_shape):
+    point_list = [None] * len(buffered_route_shape)
+    counter = 0
+
+    for point in buffered_route_shape:
+        lat_lng = [float(coord) for coord in point.split(",")]
+        point_list.insert(counter, lat_lng)
+        counter += 1
+
+    point_list = [x for x in point_list if x is not None]
+
+    return asPolygon(point_list)
 
 
 WGS84 = pyproj.Proj(init='epsg:4326')
@@ -61,6 +77,12 @@ def buffer_clause(wkt, radius_of_buffer):
 
     clause = "ST_AsText(ST_Buffer(ST_GeographyFromText(E'SRID=4326;%s'),%s)) as buffered_polygon" % (
         wkt, radius_of_buffer)
-    print clause
+
+    return clause
+
+
+def contains_clause_within_polyhon(wkt):
+    clause = "SELECT p.* FROM poi_place p WHERE ST_Covers(ST_GeographyFromText('%s'), p.location::geography)" % (
+        wkt)
 
     return clause

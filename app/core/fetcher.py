@@ -78,7 +78,7 @@ def create_isoline(poi=TagPlaces):
     isochrone_polygon = PoiIsochrones(type=PoiType.PLACES, here_id=poi.here_id, geom_3min_isoline=geo_3min_pol,
                                       geom_5min_isoline=geo_5min_pol, geom_10min_isoline=geo_10min_pol)
 
-    q = _session.query(PoiIsochrones).filter(PoiIsochrones.here_id == poi.here_id)
+    q = _session.query(PoiIsochrones).filter(PoiIsochrones.source_id == poi.here_id)
     global one
 
     try:

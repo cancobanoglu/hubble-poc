@@ -4,23 +4,24 @@ from models import PoiIsochrones
 
 
 class IsochroneDao:
+    session = None
+
     def __init__(self):
-        pass
+        self.session = db.get_session()
 
-    def merge(self, here_id, isochrone_polygon):
+    def merge(self, here_id, isochrone=PoiIsochrones):
 
-        session = self.get_session()
         try:
-            q = session.query(PoiIsochrones).filter(PoiIsochrones.here_id == here_id)
+            q = self.session.query(PoiIsochrones).filter(PoiIsochrones.source_id == here_id)
             one = q.one()
 
             if one is None:
-                session.add(isochrone_polygon)
+                self.session.add(isochrone)
             else:
-                isochrone_polygon.id = one.id
-                session.merge(isochrone_polygon)
+                isochrone.id = one.id
+                self.session.merge(isochrone)
         except:
-            session.add(isochrone_polygon)
+            self.session.add(isochrone)
             pass
 
-        session.commit()
+        self.session.commit()
