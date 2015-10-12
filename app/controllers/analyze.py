@@ -10,6 +10,8 @@ from bottle import response
 from app.core.utils.geomety_utils import *
 from app.core.fetcher import *
 
+from math import radians, cos, sin, asin, sqrt
+
 DBSession = get_session()
 
 
@@ -97,6 +99,35 @@ def buffered_route_polygon():
 
     resp = dict()
     resp['items'] = polygon
+
+    response.content_type = 'application/json'
+    return dumps(resp)
+
+
+@route("/analyze/intersection/distance", method='POST')
+def distance_to_intersection():
+    response_body = json.load(request.body)
+    lat1 = response_body.get('intersectionPointLat')
+    lon1 = response_body.get('intersectionPointLng')
+    lat2 = response_body.get('passengerStartPointLat')
+    lon2 = response_body.get('passengerEndPointLng')
+
+    """
+    Calculate the great circle distance between two points
+    on the earth (specified in decimal degrees)
+    """
+    # convert decimal degrees to radians
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * asin(sqrt(a))
+    km = 6367 * c
+
+    resp = dict()
+    item = {'distancePedestrianRoute': km*1000}
+    resp['item'] = item
 
     response.content_type = 'application/json'
     return dumps(resp)
