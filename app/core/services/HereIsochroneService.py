@@ -2,7 +2,9 @@ __author__ = 'cancobanoglu'
 from app.core.api_urls import *
 from shapely.geometry import asPolygon
 from app.core.utils.geomety_utils import *
-import requests, config
+import requests
+import config
+import sys
 
 '''
     IsochroneService class is responsible for getting isoline polygon from HERE map isochrone service
@@ -192,13 +194,22 @@ class HereReverseIsochrone:
         url = self.build_url()
         response = requests.get(url)
         self.response_data = response.json()
-        shape_data = self.response_data['response']['isoline'][0]['component'][0]['shape']
+        try:
+            shape_data = self.response_data['response']['isoline'][0]['component'][0]['shape']
+        except KeyError:
+            print 'Erroneous url ::: ' + url
+            print 'Error raised when trying to get response ! '
+            error = self.response_data['additionalData'][0]['value']
+            if error == 'NGEO_ERROR_UNKNOWN':
+                raise ValueError
+
         polygon_data = build_polygon(shape_data)
 
         if as_wkt is True:
             return wkt_element(polygon_data)
 
         return polygon_data
+
 
 # iso_service = HereIsochroneService()
 # iso_service.set_mode('fastest;pedestrian;traffic:enabled')

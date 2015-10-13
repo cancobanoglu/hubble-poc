@@ -119,7 +119,7 @@ def places_within_buffer():
 
     polygon = make_polygon(buffered_route_shape)
 
-    clause = contains_clause_within_polyhon(polygon.wkt)
+    clause = contained_clause_within(polygon.wkt)
 
     data = db.get_connection().execute(clause)
 

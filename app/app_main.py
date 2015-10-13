@@ -22,7 +22,7 @@ os.chdir(currentPath)
 
 print sys.path
 
-from controllers import analyze, home
+from controllers import analyze, home, places
 
 #
 # Add view paths to the Bottle template path

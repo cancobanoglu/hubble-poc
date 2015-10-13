@@ -16,6 +16,9 @@ DB_SETTINGS = dict(
 )
 
 HERE_APP_ACCESS = dict(
-    app_id="kvTMp5y2JFGERc9pWR6o",
-    app_code="PBy3H_B24TMLr03MECgKFQ"
+
+    app_id="UFS767dLBwSdpZzUVzsX",
+    app_code="hVVI7DSvOQhtp2W0561ySQ"
+    # app_id="kvTMp5y2JFGERc9pWR6o",
+    # app_code="PBy3H_B24TMLr03MECgKFQ"
 )

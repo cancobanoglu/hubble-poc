@@ -81,8 +81,14 @@ def buffer_clause(wkt, radius_of_buffer):
     return clause
 
 
-def contains_clause_within_polyhon(wkt):
-    clause = "SELECT p.* FROM poi_place p WHERE ST_Covers(ST_GeographyFromText('%s'), p.location::geography)" % (
-        wkt)
+# def contained_clause_within(wkt):
+#     clause = "SELECT p.* FROM poi_place p WHERE ST_Covers(ST_GeographyFromText('%s'), p.location::geography)" % (
+#         wkt)
+#
+#     return clause
 
+
+def contained_clause_within(wkt):
+    clause = "SELECT p.* FROM poi_place p WHERE ST_Covers(ST_GeographyFromText('%s'), ST_GeographyFromText(ST_AsText(ST_MakePoint(p.lat,p.lng))))" % (
+        wkt)
     return clause

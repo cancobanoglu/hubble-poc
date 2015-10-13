@@ -35,5 +35,16 @@ class PlacesDao:
         return session.query(models.TagPlaces).all()
 
     @staticmethod
+    def find_all_stops(session):
+        return session.query(models.TagPlaces).filter(models.TagPlaces.category == 'PT_STOP').all()
+
+    @staticmethod
     def find_one(session):
         return session.query(models.TagPlaces).first()
+
+    @staticmethod
+    def find_stops_without_isolines(session):
+        subquery = session.query(models.PoiIsochrones.source_id).subquery()
+        q = session.query(models.TagPlaces).filter(~models.TagPlaces.here_id.in_(subquery), models.TagPlaces.category == 'PT_STOP')
+
+        return q.all()

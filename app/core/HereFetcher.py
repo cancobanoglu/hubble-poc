@@ -1,7 +1,9 @@
+from twisted.python.util import println
 from app.core.map_grid_creator import create_boundingbox_rect_list
 
 __author__ = 'cancobanoglu'
 from app.dao.IsochroneDao import IsochroneDao
+from app.dao.PtStopsDao import PtStopsDao
 from app.core.services.HereIsochroneService import *
 from app.core.services.HerePlaceService import *
 import app.dao.db as db
@@ -10,6 +12,9 @@ isochrone_dao = IsochroneDao()
 here_isochrone_service = HereIsochroneService()
 here_reverse_isochrone_service = HereReverseIsochrone()
 here_places_service = HerePlaceService()
+stops_dao = PtStopsDao()
+place_dao = PlacesDao()
+session = db.get_session()
 
 
 class HereFetcher:
@@ -104,12 +109,18 @@ class HereFetcher:
     def fetch_place_categories(self):
         pass
 
+    @staticmethod
+    def start_fetching_stops_isolines():
+        place_list = place_dao.find_stops_without_isolines(session)
+        print place_list.__len__()
+        for place in place_list:
+            println(place.here_id, place.id)
+            try:
+                here_fetcher.car_reverse_isolines(place, None)
+            except ValueError:
+                pass
+
 
 if __name__ == '__main__':
     here_fetcher = HereFetcher()
-    place_dao = PlacesDao()
-    session = db.get_session()
-    place_list = place_dao.find_all(session)
-
-    for place in place_list:
-        here_fetcher.car_reverse_isolines(place, None)
+    here_fetcher.start_fetching_stops_isolines()
