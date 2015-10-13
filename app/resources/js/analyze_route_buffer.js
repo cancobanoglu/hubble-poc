@@ -3,6 +3,7 @@
  */
 
 (function () {
+    $('select').selectpicker();
     var colors = ['blue', 'green', 'red', 'grey', '#FF4433', '#CC0022', '#B00022', '#180022', '#FA0022', '#E5FFCC'];
 
     var platform = new H.service.Platform({
@@ -212,11 +213,47 @@
         });
     });
 
+    $("#drawIsolinesOfPlacesBtn").click(function () {
+        var selected_modes = getSelectedValuesFromSelectPicker('.range-selectpicker'),
+            range = getIsolineRangesFromSelecteds(selected_modes);
+        $.ajax({
+            url: '/analyze/places/isolines/' + range,
+            type: 'POST',
+            data: JSON.stringify({'source_ids': 'asdasdasdasda'}),
+            success: function (result) {
+
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
+    });
+
     function addPlacesToMap(result) {
         result.forEach(function (item) {
             marker = getCustomMarker(item.position[0], item.position[1], 'P', item.name, item.source_id);
             group.addObject(marker);
         });
+    }
+
+    function getSelectedValuesFromSelectPicker(selector) {
+        var data = [];
+        // .selectpicker
+        var $el = $(selector);
+        $el.find('option:selected').each(function () {
+            data.push({value: $(this).val(), text: $(this).text()});
+        });
+        console.log(data);
+        return data;
+    }
+
+    function getIsolineRangesFromSelecteds(selectedModes) {
+        var modeString = '';
+        selectedModes.forEach(function (modeObject) {
+            modeString += modeObject.value + ';';
+        });
+
+        return modeString.substring(0, modeString.length - 1);
     }
 
     function getCustomMarker(lat, lng, iconText, itemName, category, ic) {

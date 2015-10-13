@@ -50,5 +50,34 @@
             </div>
         </div>
     </div>
+    <div class="panel panel-default">
+        <div class="panel-heading">
+            <h4 class="panel-title">
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Places Isochrones</a>
+            </h4>
+        </div>
+        <div id="collapseFour" class="panel-collapse collapse in">
+            <div class="panel-body">
+                <form id="isochronesOfPlacesForm">
+                    <label><b>Reverse Flow Isolines - Driver</b></label>
+
+                    <select class="range-selectpicker" multiple title='Choose Ranges'>
+                        <option value="1" selected>1 min</option>
+                        <option value="3">3 mins</option>
+                        <option value="5">5 mins</option>
+                    </select>
+                    <br/>
+                    <br/>
+                    <br/>
+
+                    <div class="btn-group btn-group-justified">
+                        <button id="drawIsolinesOfPlacesBtn" type="button" class="btn btn-success btn-primary">
+                            Draw Isolines
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 

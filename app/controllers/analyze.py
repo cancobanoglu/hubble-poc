@@ -30,19 +30,19 @@ def index_buffered_area():
 
 @route('/analyze/intersection', method='POST')
 def calculate_intersection():
+    # get response body from post request
     response_body = json.load(request.body)
+    # route shape A is driver route shape
     route_shape_driver = response_body.get('routeShapeA')
+    # route shape B is passenger route shape
     route_shape_passenger = response_body.get('routeShapeB')
-
+    # make a spatial shape of driver route
     line_string_driver = make_linestring(route_shape_driver)
-    print line_string_driver
+    # make a spatial shape of passenger route
     line_string_passenger = make_linestring(route_shape_passenger)
-    print line_string_passenger
 
     intersected_shapes = line_string_driver.buffer(0.00001).intersection(line_string_passenger.buffer(0.00001))
-
     point = None
-
     for _p in route_shape_passenger:
         point = asPoint([float(coord) for coord in _p.split(",")])
         if point.within(intersected_shapes):
@@ -134,9 +134,9 @@ def places_within_buffer():
     return dumps(resp)
 
 
-@route("/analyze/route/buffer/isolines/<range>", method='POST')
-def get_isoline_of_places(range):
-    print range
+@route("/analyze/places/isolines/<rng>", method='POST')
+def get_isoline_of_places(rng):
+    print rng
     response_body = json.load(request.body)
     source_ids = response_body.get('source_ids')
 
