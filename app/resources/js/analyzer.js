@@ -64,6 +64,8 @@
         'representation': 'display'
     };
 
+    var intersectionPointMarker;
+
 // Define a callback function to process the routing response:
     var onResultA = function (result) {
         var route,
@@ -262,7 +264,7 @@
 
         var ic = new H.map.Icon('http://download.st.vcdn.nokia.com/p/d/places2_stg/icons/categories/21.icon');
 
-        var intersectionPointMarker = new H.map.Marker({
+        intersectionPointMarker = new H.map.Marker({
             lat: latitude,
             lng: longitude
         }, {icon: ic});
@@ -304,7 +306,6 @@
                 target.setPosition(newPosition);
             }
         }, false);
-
 
         group.addObject(intersectionPointMarker);
         map.setCenter({lat: latitude, lng: longitude});

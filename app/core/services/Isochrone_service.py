@@ -1,5 +1,6 @@
-__author__ = 'cancobanoglu'
 from app.core.api_urls import *
+
+__author__ = 'cancobanoglu'
 
 
 class IsochroneService:
@@ -55,3 +56,5 @@ class IsochroneService:
 # iso_service.set_range('1000')
 # iso_service.set_destination_point('41.20,23,34')
 # iso_service.execute()
+
+

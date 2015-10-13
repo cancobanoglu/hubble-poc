@@ -112,21 +112,10 @@ def distance_to_intersection():
     lat2 = response_body.get('passengerStartPointLat')
     lon2 = response_body.get('passengerEndPointLng')
 
-    """
-    Calculate the great circle distance between two points
-    on the earth (specified in decimal degrees)
-    """
-    # convert decimal degrees to radians
-    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
-    # haversine formula
-    dlon = lon2 - lon1
-    dlat = lat2 - lat1
-    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
-    c = 2 * asin(sqrt(a))
-    km = 6367 * c
+    distance = distance_between_two_points(lat1, lon1, lat2, lon2)
 
     resp = dict()
-    item = {'distancePedestrianRoute': km*1000}
+    item = {'distancePedestrianRoute': distance}
     resp['item'] = item
 
     response.content_type = 'application/json'
