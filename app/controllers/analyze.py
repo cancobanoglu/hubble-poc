@@ -131,6 +131,40 @@ def places_within_buffer():
     resp = dict()
     resp['items'] = items
 
+    return resp
+
+
+@route("/analyze/filter", method='POST')
+def filter_remove_outer_places():
+    response_body = json.load(request.body)
+
+    isoline_area = response_body.get('isoline_area')
+    isoline_polygon = make_polygon(isoline_area)
+
+    buffered_route_area = response_body.get('buffered_area')
+    buffered_route_polygon = make_polygon(buffered_route_area)
+
+    intersected_area = buffered_route_polygon.intersection(isoline_polygon)
+
+    polygon = []
+    for point_tuple in intersected_area.exterior.coords:
+        polygon.append(str(point_tuple[0]) + ',' + str(point_tuple[1]))
+
+    clause = contained_clause_within(polygon.wkt)
+
+    data = db.get_connection().execute(clause)
+
+    places = []
+    for row in data:
+        places.append({'name': row.name, 'position': [row.lat, row.lng], 'source_id': row.here_id})
+
+    resp = dict()
+    resp['shape'] = polygon
+    resp['places'] = places
+
+    response.content_type = 'application/json'
+    return dumps(resp)
+
 
 @route("/analyze/intersection/distance", method='POST')
 def distance_to_intersection():
@@ -150,13 +184,13 @@ def distance_to_intersection():
     return dumps(resp)
 
 
-@route("/analyze/places/isolines/<rng>", method='POST')
-def get_isoline_of_places(rng):
-    print rng
+@route("/analyze/places/isolines", method='POST')
+def get_isoline_of_places():
     response_body = json.load(request.body)
     source_ids = response_body.get('source_ids')
+    range = response_body.get('range')
 
-    isochrone_dao.find_by_source_ids(range, source_ids)
+    isoline_list = isochrone_dao.find_by_source_ids(source_ids)
 
 #
 # a = buffer_clause(
