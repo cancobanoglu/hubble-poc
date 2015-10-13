@@ -13,6 +13,7 @@ from app.core.utils.geomety_utils import *
 # from app.core.fetcher import *
 from app.dao import db, models
 from app.dao.IsochroneDao import *
+from math import radians, cos, sin, asin, sqrt
 
 isochrone_dao = IsochroneDao()
 DBSession = db.get_session()
@@ -130,6 +131,21 @@ def places_within_buffer():
     resp = dict()
     resp['items'] = items
 
+
+@route("/analyze/intersection/distance", method='POST')
+def distance_to_intersection():
+    response_body = json.load(request.body)
+    lat1 = response_body.get('intersectionPointLat')
+    lon1 = response_body.get('intersectionPointLng')
+    lat2 = response_body.get('passengerStartPointLat')
+    lon2 = response_body.get('passengerEndPointLng')
+
+    distance = distance_between_two_points(lat1, lon1, lat2, lon2)
+
+    resp = dict()
+    item = {'distancePedestrianRoute': distance}
+    resp['item'] = item
+
     response.content_type = 'application/json'
     return dumps(resp)
 
@@ -141,7 +157,6 @@ def get_isoline_of_places(rng):
     source_ids = response_body.get('source_ids')
 
     isochrone_dao.find_by_source_ids(range, source_ids)
-
 
 #
 # a = buffer_clause(

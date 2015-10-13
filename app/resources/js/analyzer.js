@@ -64,6 +64,8 @@
         'representation': 'display'
     };
 
+    var intersectionPointMarker;
+
 // Define a callback function to process the routing response:
     var onResultA = function (result) {
         var route,
@@ -219,10 +221,6 @@
         }
     }
 
-    function drawPedestrian() {
-
-    }
-
     function eventToLocation(event) {
         return map.screenToGeo(event.currentPointer.viewportX, event.currentPointer.viewportY);
     }
@@ -241,12 +239,32 @@
     }
 
     function putFirstIntersectedPoint(latitude, longitude) {
+
         intersectionPointLat = latitude;
         intersectionPointLong = longitude;
 
+        $.ajax({
+                url: '/analyze/intersection/distance',
+                type: 'POST',
+                data: JSON.stringify({'intersectionPointLat': intersectionPointLat,
+                                       'intersectionPointLng': intersectionPointLong,
+                                       'passengerStartPointLat': passengerRouteStart.getPosition().lat,
+                                       'passengerEndPointLng': passengerRouteStart.getPosition().lng}),
+                success: function (result) {
+                    var distance = Math.round(result.item.distancePedestrianRoute*100)/100;
+                    setInput('distancePedestrianRoute', distance + " meters");
+                    if (result.success == false) {
+                        alert("result.success is false");
+                    }
+                },
+                error: function (result) {
+                    alert("Something is not OK")
+                },
+            });
+
         var ic = new H.map.Icon('http://download.st.vcdn.nokia.com/p/d/places2_stg/icons/categories/21.icon');
 
-        var intersectionPointMarker = new H.map.Marker({
+        intersectionPointMarker = new H.map.Marker({
             lat: latitude,
             lng: longitude
         }, {icon: ic});
@@ -289,10 +307,11 @@
             }
         }, false);
 
-
         group.addObject(intersectionPointMarker);
         map.setCenter({lat: latitude, lng: longitude});
         map.setZoom(15);
+
+
     }
 
 

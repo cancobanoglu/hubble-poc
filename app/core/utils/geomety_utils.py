@@ -1,8 +1,8 @@
-from shapely.geometry.polygon import asPolygon
-
 __author__ = 'cancobanoglu'
 
 import pyproj
+from shapely.geometry.polygon import asPolygon
+from math import radians, cos, sin, asin, sqrt
 from shapely.ops import transform
 from functools import partial
 from shapely.geometry import asLineString, Point
@@ -58,12 +58,12 @@ def wkt_element(object):
     return WKTElement('SRID=4326; ' + object.wkt)
 
 
-def within_clause(tablename, latitude, longitude, distance):
+def within_clause(table_name, latitude, longitude, distance):
     """Return a within clause that explicitly casts the `latitude` and
       `longitude` provided to geography type.
     """
 
-    attr = '%s.location' % tablename
+    attr = '%s.location' % table_name
 
     point = 'POINT(%0.8f %0.8f)' % (longitude, latitude)
     location = "ST_GeographyFromText(E'SRID=4326;%s')" % point
@@ -92,3 +92,25 @@ def contained_clause_within(wkt):
     clause = "SELECT p.* FROM poi_place p WHERE ST_Covers(ST_GeographyFromText('%s'), ST_GeographyFromText(ST_AsText(ST_MakePoint(p.lat,p.lng))))" % (
         wkt)
     return clause
+
+
+def distance_between_two_points(lat1, lon1, lat2, lon2):
+    """
+    Calculate the great circle distance between two points
+    on the earth (specified in decimal degrees)
+    """
+
+    # Convert latitude and longitude to
+    # spherical coordinates in radians.
+    lon1, lat1, lon2, lat2 = map(radians, [lon1, lat1, lon2, lat2])
+
+    # Haversine Formula
+    diff_lon = lon2 - lon1
+    diff_lat = lat2 - lat1
+    a = sin(diff_lat / 2) ** 2 + cos(lat1) * cos(lat2) * sin(diff_lon / 2) ** 2
+    c = 2 * asin(sqrt(a))
+    # Remember to multiply arc by the radius of the earth
+    # in your favorite set of units to get length.
+    meters = 6367 * c * 1000
+
+    return meters
