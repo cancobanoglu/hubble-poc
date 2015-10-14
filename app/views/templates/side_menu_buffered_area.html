@@ -53,13 +53,37 @@
     <div class="panel panel-default">
         <div class="panel-heading">
             <h4 class="panel-title">
-                <a data-toggle="collapse" data-parent="#accordion" href="#collapseThree">Places Isochrones</a>
+                <a data-toggle="collapse" data-parent="#accordion" href="#collapseFour">Places Isochrones</a>
             </h4>
         </div>
         <div id="collapseFour" class="panel-collapse collapse in">
             <div class="panel-body">
                 <form id="isochronesOfPlacesForm">
-                    <label><b>Reverse Flow Isolines - Driver</b></label>
+
+                    <label><b>Isoline for Passenger</b></label>
+
+                    <select class="passenger-range-selectpicker" multiple title='Choose Ranges'>
+                        <option value="3" selected>3 mins</option>
+                        <option value="5">5 mins</option>
+                        <option value="10">10 mins</option>
+                    </select>
+                    <br/>
+
+
+                    <button id="drawIsolineForPassengerBtn" type="button" class="btn btn-block btn-info">
+                        Draw Passenger Isoline
+                    </button>
+
+                    <button id="clearPassengerBtn" type="button" class="btn btn-block btn-danger">
+                        Clear Passenger
+                    </button>
+
+
+                    <button id="removeOuterOnesBtn" type="button" class="btn btn-block btn-primary">
+                        Remove Outer Places
+                    </button>
+                    <br/>
+                    <label><b>Reverse Flow Driver Isolines for places</b></label>
 
                     <select class="range-selectpicker" multiple title='Choose Ranges'>
                         <option value="1" selected>1 min</option>
@@ -67,15 +91,29 @@
                         <option value="5">5 mins</option>
                     </select>
                     <br/>
-                    <br/>
-                    <br/>
 
                     <div class="btn-group btn-group-justified">
                         <button id="drawIsolinesOfPlacesBtn" type="button" class="btn btn-success btn-primary">
                             Draw Isolines
                         </button>
                     </div>
+
+                    <br/>
+                    <br/>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div id="placesDiv" class="hidden">
+        <div class="panel panel-default">
+            <div class="panel-heading">
+                <h4 class="panel-title">
+                    <a data-toggle="collapse" data-parent="#accordion" href="#collapseFive">Accessible Places by
+                        Passenger</a>
+                </h4>
+            </div>
+            <div id="collapseFive" class="panel-collapse collapse in">
+              asdasdas
             </div>
         </div>
     </div>

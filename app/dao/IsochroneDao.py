@@ -25,3 +25,14 @@ class IsochroneDao:
             pass
 
         self.session.commit()
+
+    def find_by_source_ids(self, source_ids):
+
+        try:
+            q = self.session.query(PoiIsochrones).filter(PoiIsochrones.source_id.in_(source_ids))
+            return q.all()
+        except ValueError as e:
+            print('something bad happened !')
+            print(e.message)
+
+        return []

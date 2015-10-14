@@ -11,6 +11,9 @@
         'app_code': 'sW742GORuOJB1BR9j19_3A'
     });
 
+    // Get an instance of the enterprise routing service:
+    var enterpriseRouter = platform.getEnterpriseRoutingService();
+
     // Instantiate a map inside the DOM element with id map. The
     // map center is in San Francisco, the zoom level is 10:
     var map = new H.Map(document.getElementById('mapContainer'),
@@ -44,7 +47,7 @@
     };
 
     var router = platform.getRoutingService();
-
+    var foundPlacesSourceIdList = [];
     // Define a callback function to process the routing response:
     var onResultDriverRouteCallback = function (result) {
         var route,
@@ -96,6 +99,9 @@
             setInput('routeEndA', routingParametersDriver.waypoint1);
             drawDriverRoute();
 
+        } else if (passengerRouteStart == null) {
+            passengerRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'YB', 'Yolcunun başlangıç noktası', '', 'http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Walking-icon.png');
+            group.addObject(passengerRouteStart);
         }
     });
 
@@ -155,9 +161,11 @@
     }
 
 
-    function addPolygonToMap(polygon, customStyle) {
+    function addPolygonToMap(polygon, customStyle, removeBuffered) {
 
-        if (bufferedRoutePolygon != null) map.removeObject(bufferedRoutePolygon);
+        if (bufferedRoutePolygon != null)
+            if (removeBuffered)
+                map.removeObject(bufferedRoutePolygon);
 
         var strip = new H.geo.Strip();
         polygon.forEach(function (coords) {
@@ -190,7 +198,7 @@
                     lineJoin: 'bevel'
                 };
                 bufferedRouteShape = items;
-                addPolygonToMap(items, customStyle);
+                addPolygonToMap(items, customStyle, true);
             },
             error: function (result) {
                 alert("Something is not OK")
@@ -205,6 +213,7 @@
             type: 'POST',
             data: JSON.stringify({'buffered_area': bufferedRouteShape}),
             success: function (result) {
+                foundPlacesSourceIdList.clear;
                 addPlacesToMap(result.items)
             },
             error: function (result) {
@@ -217,9 +226,9 @@
         var selected_modes = getSelectedValuesFromSelectPicker('.range-selectpicker'),
             range = getIsolineRangesFromSelecteds(selected_modes);
         $.ajax({
-            url: '/analyze/places/isolines/' + range,
+            url: '/analyze/places/isolines',
             type: 'POST',
-            data: JSON.stringify({'source_ids': 'asdasdasdasda'}),
+            data: JSON.stringify({'source_ids': foundPlacesSourceIdList, 'ranges': range}),
             success: function (result) {
 
             },
@@ -231,7 +240,8 @@
 
     function addPlacesToMap(result) {
         result.forEach(function (item) {
-            marker = getCustomMarker(item.position[0], item.position[1], 'P', item.name, item.source_id);
+            var marker = getCustomMarker(item.position[0], item.position[1], 'P', item.name, item.source_id);
+            foundPlacesSourceIdList.push(item.source_id);
             group.addObject(marker);
         });
     }
@@ -288,4 +298,92 @@
         return marker;
     }
 
+    var isolineParameters = {
+        'mode': '',
+        'start': '',
+        'quality': '1'
+    };
+
+    $("#drawIsolineForPassengerBtn").click(function () {
+
+        isolineParameters.start = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
+        isolineParameters.start = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
+
+        var selected_ranges = getSelectedValuesFromSelectPicker('.passenger-range-selectpicker'),
+            ranges = getIsolineRangesFromSelecteds(selected_ranges);
+        console.log(ranges);
+        isolineParameters.time = 'PT0H' + ranges + 'M';
+
+        var mode = 'shortestWalk;pedestrian';
+        isolineParameters.mode = mode;
+
+        // Call the Enterprise Routing API to calculate an isoline:
+        enterpriseRouter.calculateIsoline(
+            isolineParameters,
+            onIsolineResult,
+            function (error) {
+                alert(error.message);
+            }
+        );
+    });
+
+    var isolinePolygons = [];
+    var lastPassengerIsolineShape;
+
+    $("#clearPassengerBtn").click(function () {
+        group.removeObject(passengerRouteStart);
+        passengerRouteStart = null;
+        map.removeObjects(isolinePolygons);
+    });
+
+
+    var onIsolineResult = function (result) {
+        var isolineCoords = result.Response.isolines[0].value,
+            strip = new H.geo.Strip(),
+            isolinePolygon;
+
+        // Add the returned isoline coordinates to a strip:
+        isolineCoords.forEach(function (coords) {
+            strip.pushLatLngAlt.apply(strip, coords.split(','));
+        });
+        // Create a polygon and a marker representing the isoline:
+        lastPassengerIsolineShape = isolineCoords;
+        isolinePolygon = new H.map.Polygon(strip);
+        isolinePolygons.push(isolinePolygon);
+        isolinePolygon.addEventListener('tap', function (event) {
+            var spatial = event.target;
+            console.log(spatial);
+
+        });
+        // Add the polygon and marker to the map:
+        map.addObjects([isolinePolygon]);
+        // Center and zoom the map so that the whole isoline polygon is
+        // in the viewport:
+        map.setViewBounds(isolinePolygon.getBounds());
+    };
+
+    $("#removeOuterOnesBtn").click(function () {
+        $.ajax({
+            url: '/analyze/filter',
+            type: 'POST',
+            data: JSON.stringify({'isoline_area': lastPassengerIsolineShape, 'buffered_area': bufferedRouteShape}),
+            success: function (result) {
+                var shape = result.shape;
+                var places = result.places;
+                var customStyle = {
+                    strokeColor: 'black',
+                    fillColor: 'rgba(232, 240, 247, 0.5',
+                    lineWidth: 4,
+                    lineCap: 'square',
+                    lineJoin: 'bevel'
+                };
+                addPolygonToMap(shape, customStyle, false);
+                $("#placesDiv").removeClass('hidden');
+                
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
+    });
 })();
