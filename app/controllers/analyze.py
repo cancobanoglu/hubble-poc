@@ -1,7 +1,5 @@
 from shapely.geometry.point import asPoint
 
-__author__ = 'cancobanoglu'
-
 from json import dumps
 import json
 
@@ -10,10 +8,10 @@ from bottle import request  # or route
 from bottle import response
 
 from app.core.utils.geomety_utils import *
-# from app.core.fetcher import *
-from app.dao import db, models
+from app.dao import models
 from app.dao.IsochroneDao import *
-from math import radians, cos, sin, asin, sqrt
+
+__author__ = 'cancobanoglu'
 
 isochrone_dao = IsochroneDao()
 DBSession = db.get_session()
@@ -157,6 +155,21 @@ def get_isoline_of_places(rng):
     source_ids = response_body.get('source_ids')
 
     isochrone_dao.find_by_source_ids(range, source_ids)
+
+
+@route("/analyze/intersection/polygon", method='POST')
+def get_intersection_of_polygons():
+    response_body = json.load(request.body)
+    polygon1 = response_body.get('polygon1')
+    polygon2 = response_body.get('polygon2')
+
+    intersect_poly = get_intersection_of_polygons(polygon1, polygon2)
+    resp = dict()
+    item = {'intersectPoly': intersect_poly}
+    resp['item'] = item
+
+    response.content_type = 'application/json'
+    return dumps(resp)
 
 #
 # a = buffer_clause(

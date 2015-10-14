@@ -22,7 +22,7 @@
                     <textarea class="form-control" rows="5" id="routeShapeA" style="width: 250px"></textarea>
                     <label for="routeShapeB"><b>B Line:</b></label>
                     <textarea class="form-control" rows="5" id="routeShapeB" style="width: 250px"></textarea>
-                    <label for="distancePedestrianRoute"><b>Pedestrian - Route Distance</b></label>
+                    <label for="distancePedestrianRoute"><b>Pedestrian - Intersection Distance</b></label>
                     <input type="text" class="form-control" id="distancePedestrianRoute" style="width: 250px">
 
                     <div class="btn-group btn-group-justified">
@@ -34,6 +34,11 @@
                             Clear Map
                         </button>
                     </div>
+
+                    <button id="quickIsochroneBtn" type="button" class="btn btn-success btn-primary">
+                            Quick Isochrone Intersection
+                    </button>
+
                 </form>
             </div>
         </div>
@@ -47,6 +52,7 @@
         <div id="collapseIsochrone" class="panel-collapse collapse">
             <div class="panel-body">
                 <form id="isochroneCalculationFrm">
+
                     <label><b>Isoline For ?</b></label>
 
                     <input type="checkbox" name="isoline-point" data-handle-width="80" data-on-text="Intersection"
