@@ -14,6 +14,9 @@
     var colorBlue = 'blue';
     var intersectionPointLat, intersectionPointLong;
 
+    var polygonAroundIntersectionPoint;
+    var polygon5MinsDriver;
+
     var platform = new H.service.Platform({
         'app_id': 'bkXkAirxQ6lW0e5DdpqA',
         'app_code': 'sW742GORuOJB1BR9j19_3A'
@@ -46,9 +49,7 @@
     // Add the group object to the map:
     map.addObject(group);
 
-    var passangerRouteLine;
-
-    var driverRouteStart, driverRouteEnd, passengerRouteStart, passengerRouteEnd, driverRouteShape, passengerRouteShape;
+    var driverRouteStart, driverRouteEnd, passengerRouteStart, passengerRouteEnd, driverRouteShape, passengerRouteShape, passangerRouteLine;
 
     var bufferedRoutePolygon;
 
@@ -244,25 +245,23 @@
         intersectionPointLong = longitude;
 
         $.ajax({
-            url: '/analyze/intersection/distance',
-            type: 'POST',
-            data: JSON.stringify({
-                'intersectionPointLat': intersectionPointLat,
-                'intersectionPointLng': intersectionPointLong,
-                'passengerStartPointLat': passengerRouteStart.getPosition().lat,
-                'passengerEndPointLng': passengerRouteStart.getPosition().lng
-            }),
-            success: function (result) {
-                var distance = Math.round(result.item.distancePedestrianRoute * 100) / 100;
-                setInput('distancePedestrianRoute', distance + " meters");
-                if (result.success == false) {
-                    alert("result.success is false");
-                }
-            },
-            error: function (result) {
-                alert("Something is not OK")
-            },
-        });
+                url: '/analyze/intersection/distance',
+                type: 'POST',
+                data: JSON.stringify({'intersectionPointLat': intersectionPointLat,
+                                       'intersectionPointLng': intersectionPointLong,
+                                       'passengerStartPointLat': passengerRouteStart.getPosition().lat,
+                                       'passengerEndPointLng': passengerRouteStart.getPosition().lng}),
+                success: function (result) {
+                    distancePedestrianRoute = Math.round(result.item.distancePedestrianRoute*100)/100;
+                    setInput('distancePedestrianRoute', distancePedestrianRoute + " meters");
+                    if (result.success == false) {
+                        alert("result.success is false");
+                    }
+                },
+                error: function (result) {
+                    alert("Something is not OK")
+                },
+            });
 
         var ic = new H.map.Icon('http://download.st.vcdn.nokia.com/p/d/places2_stg/icons/categories/21.icon');
 
@@ -313,7 +312,6 @@
         map.setCenter({lat: latitude, lng: longitude});
         map.setZoom(15);
 
-
     }
 
 
@@ -336,7 +334,6 @@
                 alert("Something is not OK")
             },
         });
-
 
     });
 
@@ -444,6 +441,8 @@
         'quality': '1'
     }
 
+    var isoline1Polygon, isoline2Polygon;
+
     var onIsolineResult = function (result) {
         var isolineCoords = result.Response.isolines[0].value,
             strip = new H.geo.Strip(),
@@ -468,6 +467,111 @@
         map.setViewBounds(isolinePolygon.getBounds());
     };
 
+    var onIsoline1Result = function (result) {
+        var isolineCoords = result.Response.isolines[0].value,
+            strip = new H.geo.Strip();
+
+        // Add the returned isoline coordinates to a strip:
+        isolineCoords.forEach(function (coords) {
+            strip.pushLatLngAlt.apply(strip, coords.split(','));
+        });
+        // Create a polygon and a marker representing the isoline:
+
+        isoline1Polygon = new H.map.Polygon(strip);
+        isoline1Polygon.addEventListener('tap', function (event) {
+            var spatial = event.target;
+            console.log(spatial);
+
+        });
+        // Add the polygon and marker to the map:
+        map.addObjects([isoline1Polygon]);
+        // Center and zoom the map so that the whole isoline polygon is
+        // in the viewport:
+        map.setViewBounds(isoline1Polygon.getBounds());
+
+        if (isoline2Polygon != null) {
+         // TODO
+        }
+    };
+
+    var onIsoline2Result = function (result) {
+        var isolineCoords = result.Response.isolines[0].value,
+            strip = new H.geo.Strip(),
+            isoline2Polygon;
+
+        // Add the returned isoline coordinates to a strip:
+        isolineCoords.forEach(function (coords) {
+            strip.pushLatLngAlt.apply(strip, coords.split(','));
+        });
+        // Create a polygon and a marker representing the isoline:
+
+        isoline2Polygon = new H.map.Polygon(strip);
+        isoline2Polygon.addEventListener('tap', function (event) {
+            var spatial = event.target;
+            console.log(spatial);
+
+        });
+        // Add the polygon and marker to the map:
+        map.addObjects([isoline2Polygon]);
+        // Center and zoom the map so that the whole isoline polygon is
+        // in the viewport:
+        map.setViewBounds(isoline2Polygon.getBounds());
+
+        if (isoline1Polygon != null) {
+         // TODO
+        }
+    };
+
+    $("#quickIsochroneBtn").click(function () {
+
+        $("#resetDrawedOnes").click();
+
+        console.log("reset drawed ones performed");
+
+        var isoline1Params = {
+            'mode': 'fastest;car;traffic:enabled',
+            'start': '',
+            'quality': '1',
+            'time': 'PT0H5M'
+//            'rangetype': 'distance',
+//            'distance': 1000
+        }
+
+        var isoline2Params = {
+            'mode': 'shortestWalk;pedestrian',
+            'start': '',
+            'quality': '1',
+            'rangetype': 'distance',
+
+        }
+        isoline1Params.start = intersectionPointLat + ',' + intersectionPointLong;
+        isoline2Params.start = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
+        isoline2Params.distance = distancePedestrianRoute;
+
+        console.log("distance = " + distancePedestrianRoute);
+
+        isoline1Polygon = null; isoline2Polygon = null;
+        // Get an instance of the enterprise routing service:
+        var enterpriseRouter = platform.getEnterpriseRoutingService();
+        // Call the Enterprise Routing API to calculate an isoline:
+        enterpriseRouter.calculateIsoline(
+            isoline1Params,
+            onIsoline1Result,
+            function (error) {
+                alert(error.message);
+            }
+        );
+
+        enterpriseRouter.calculateIsoline(
+            isoline2Params,
+            onIsoline2Result,
+            function (error) {
+                alert(error.message);
+            }
+        );
+
+    });
+
     $("#drawIsochroneBtn").click(function () {
         var isolineFor = $("[name='isoline-point']").bootstrapSwitch('state');
 
@@ -477,9 +581,7 @@
             isolineParameters.start = intersectionPointLat + ',' + intersectionPointLong;
         } else {
             isolineParameters.start = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
-            isolineParameters.start = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
         }
-
 
         var rangeType = $("[name='range-type']").bootstrapSwitch('state');
         var traficCondition = $("[name='traffic-condition']").bootstrapSwitch('state');

@@ -2,6 +2,7 @@ __author__ = 'cancobanoglu'
 
 import pyproj
 from shapely.geometry.polygon import asPolygon
+from shapely.geometry import box, Polygon
 from math import radians, cos, sin, asin, sqrt
 from shapely.ops import transform
 from functools import partial
@@ -114,3 +115,8 @@ def distance_between_two_points(lat1, lon1, lat2, lon2):
     meters = 6367 * c * 1000
 
     return meters
+
+
+def overlap_polygon(polygon1, polygon2):
+    return polygon1.intersects(polygon2)
+
