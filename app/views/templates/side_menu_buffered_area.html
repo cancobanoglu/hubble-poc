@@ -43,7 +43,7 @@
                             Draw Buffered Area
                         </button>
                         <button id="findPlacesWithinAreaBtn" type="button" class="btn btn-success btn-primary">
-                            Find Places
+                            Find Places Within Buffered Area
                         </button>
                     </div>
                 </form>
@@ -62,7 +62,7 @@
 
                     <label><b>Isoline for Passenger</b></label>
 
-                    <select class="passenger-range-selectpicker" multiple title='Choose Ranges'>
+                    <select class="passenger-range-selectpicker" single title='Choose Ranges'>
                         <option value="3" selected>3 mins</option>
                         <option value="5">5 mins</option>
                         <option value="10">10 mins</option>
@@ -79,22 +79,30 @@
                     </button>
 
 
-                    <button id="removeOuterOnesBtn" type="button" class="btn btn-block btn-primary">
-                        Remove Outer Places
+                    <button id="findIntersectedAreaBtn" type="button" class="btn btn-block btn-primary">
+                        Find Intersected Area
                     </button>
                     <br/>
-                    <label><b>Reverse Flow Driver Isolines for places</b></label>
 
-                    <select class="range-selectpicker" multiple title='Choose Ranges'>
-                        <option value="1" selected>1 min</option>
-                        <option value="3">3 mins</option>
-                        <option value="5">5 mins</option>
+                    <div id="findPlacesWithinIntersectedAreaDiv" class="hidden">
+                        <button id="findPlacesWithinIntersectedAreaBtn" type="button" class="btn btn-block btn-success">
+                            Find Places Within ...
+                        </button>
+                    </div>
+
+                    <br/>
+                    <label><b>Accessible Places by Driver</b></label>
+
+                    <select class="detourrange-selectpicker" single title='Choose Ranges'>
+                        <option value="1" selected>1 min detour</option>
+                        <option value="3">3 mins detour</option>
+                        <option value="5">5 mins detour</option>
                     </select>
                     <br/>
 
                     <div class="btn-group btn-group-justified">
-                        <button id="drawIsolinesOfPlacesBtn" type="button" class="btn btn-success btn-primary">
-                            Draw Isolines
+                        <button id="findAccessiblePlacesForDriverBtn" type="button" class="btn btn-success btn-primary">
+                            Find Places for Driver
                         </button>
                     </div>
 
@@ -113,7 +121,7 @@
                 </h4>
             </div>
             <div id="collapseFive" class="panel-collapse collapse in">
-              asdasdas
+                asdasdas
             </div>
         </div>
     </div>

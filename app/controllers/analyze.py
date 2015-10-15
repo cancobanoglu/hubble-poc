@@ -1,4 +1,6 @@
 from shapely.geometry.point import asPoint
+from sqlalchemy.sql.functions import func
+from app.core.utils.postgis_utils import intersects_clause
 
 __author__ = 'cancobanoglu'
 
@@ -74,13 +76,13 @@ def within():
         items.append(
             {'position': [place.lat, place.lng], 'name': place.name, 'category': place.category, 'type': 'PLACE'})
 
-    pt_stops_clause = within_clause('poi_pt_stop', point_lat, point_lon, radius)
-    print pt_stops_clause
-    query = DBSession.query(models.TagPtStops).filter(pt_stops_clause)
-    pt_stop_list = query.all()
-
-    for stop in pt_stop_list:
-        items.append({'position': [stop.lat, stop.lng], 'name': stop.name, 'vicinity': stop.vicinity, 'type': 'PLACE'})
+    # pt_stops_clause = within_clause('poi_pt_stop', point_lat, point_lon, radius)
+    # print pt_stops_clause
+    # query = DBSession.query(models.TagPtStops).filter(pt_stops_clause)
+    # pt_stop_list = query.all()
+    #
+    # for stop in pt_stop_list:
+    #     items.append({'position': [stop.lat, stop.lng], 'name': stop.name, 'vicinity': stop.vicinity, 'type': 'PLACE'})
 
     resp = dict()
     resp['items'] = items
@@ -118,23 +120,54 @@ def places_within_buffer():
     response_body = json.load(request.body)
     buffered_route_shape = response_body.get('buffered_area')
 
-    polygon = make_polygon(buffered_route_shape)
+    return get_response_places_within_area(buffered_route_shape)
 
-    clause = contained_clause_within(polygon.wkt)
 
-    data = db.get_connection().execute(clause)
+@route("/analyze/intersectionArea/places", method='POST')
+def find_places_within_intersected_area():
+    response_body = json.load(request.body)
+    buffered_route_shape = response_body.get('intersected_area')
 
-    items = []
-    for row in data:
-        items.append({'name': row.name, 'position': [row.lat, row.lng], 'source_id': row.here_id})
+    return get_response_places_within_area(buffered_route_shape)
+
+
+@route("/analyze/intersectionArea/availablePlaces", method='POST')
+def find_available_places_within_intersected_area():
+    '''
+    function aims to find available places for driver.
+    :return:
+    '''
+    response_body = json.load(request.body)
+    source_ids = response_body.get('source_ids')
+    _range = response_body.get('range')
+    driver_route_shape = response_body.get('driver_route')
+    line_string_driver = make_linestring(driver_route_shape)
+    print line_string_driver
+
+    if _range == u'1':
+        pass
+    elif _range == u'3':
+        query = intersects_clause(source_ids, 'driver_three_min_isoline', line_string_driver)
+        result = db.get_connection().execute(query)
+        return get_response_for_available_places(result)
+    elif _range == u'5':
+        pass
+
+
+def get_response_for_available_places(fetched_results):
+    places = []
+    for row in fetched_results:
+        print row.source_id
+        places.append(row.source_id)
 
     resp = dict()
-    resp['items'] = items
+    resp['available_place_id_list'] = places
 
-    return resp
+    response.content_type = 'application/json'
+    return dumps(resp)
 
 
-@route("/analyze/filter", method='POST')
+@route("/analyze/intersectionArea", method='POST')
 def filter_remove_outer_places():
     response_body = json.load(request.body)
 
@@ -150,7 +183,7 @@ def filter_remove_outer_places():
     for point_tuple in intersected_area.exterior.coords:
         polygon.append(str(point_tuple[0]) + ',' + str(point_tuple[1]))
 
-    clause = contained_clause_within(polygon.wkt)
+    clause = contained_clause_within(intersected_area.wkt)
 
     data = db.get_connection().execute(clause)
 
@@ -164,6 +197,23 @@ def filter_remove_outer_places():
 
     response.content_type = 'application/json'
     return dumps(resp)
+
+
+def get_response_places_within_area(area_shape):
+    polygon = make_polygon(area_shape)
+
+    clause = contained_clause_within(polygon.wkt)
+
+    data = db.get_connection().execute(clause)
+
+    items = []
+    for row in data:
+        items.append({'name': row.name, 'position': [row.lat, row.lng], 'source_id': row.here_id})
+
+    resp = dict()
+    resp['items'] = items
+
+    return resp
 
 
 @route("/analyze/intersection/distance", method='POST')
@@ -182,15 +232,6 @@ def distance_to_intersection():
 
     response.content_type = 'application/json'
     return dumps(resp)
-
-
-@route("/analyze/places/isolines", method='POST')
-def get_isoline_of_places():
-    response_body = json.load(request.body)
-    source_ids = response_body.get('source_ids')
-    range = response_body.get('range')
-
-    isoline_list = isochrone_dao.find_by_source_ids(source_ids)
 
 #
 # a = buffer_clause(

@@ -36,3 +36,18 @@ def contained_clause_within(wkt):
         wkt)
     return clause
 
+
+def intersects_clause(included_ids, geom_column, route_wkt):
+    # clause = "SELECT ST_Intersects(%s, ST_GeographyFromText(E'SRID=4326;%s'))" % (wkb, route_wkt)
+    # return clause
+
+    clause = "SELECT * from poi_isoline " \
+             "where source_id in (%s) " \
+             "AND ST_Intersects(%s, ST_GeographyFromText('%s'))" % (
+                 remove_brackets_from_str_array(included_ids), geom_column, route_wkt)
+
+    return clause
+
+
+def remove_brackets_from_str_array(array):
+    return ", ".join(repr(str(e)) for e in array)

@@ -6,6 +6,8 @@
     $('select').selectpicker();
     var colors = ['blue', 'green', 'red', 'grey', '#FF4433', '#CC0022', '#B00022', '#180022', '#FA0022', '#E5FFCC'];
 
+    var intersectionAreaPolygon;
+
     var platform = new H.service.Platform({
         'app_id': 'bkXkAirxQ6lW0e5DdpqA',
         'app_code': 'sW742GORuOJB1BR9j19_3A'
@@ -88,7 +90,7 @@
         var click_coords = eventToLocation(event);
 
         if (driverRouteStart == null) {
-            driverRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'SB', 'Sürücünün başlangıç noktası', '', 'http://icons.iconarchive.com/icons/icons8/windows-8/24/Transport-Driver-icon.png');
+            driverRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'SB', 'Sürücünün başlangıç noktası', 'A', 'http://icons.iconarchive.com/icons/icons8/windows-8/24/Transport-Driver-icon.png', null);
             group.addObject(driverRouteStart);
             routingParametersDriver.waypoint0 = driverRouteStart.getPosition().lat + ',' + driverRouteStart.getPosition().lng;
             setInput('routeStartA', routingParametersDriver.waypoint0);
@@ -100,7 +102,7 @@
             drawDriverRoute();
 
         } else if (passengerRouteStart == null) {
-            passengerRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'YB', 'Yolcunun başlangıç noktası', '', 'http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Walking-icon.png');
+            passengerRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'YB', 'Yolcunun başlangıç noktası', 'A', 'http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Walking-icon.png', null);
             group.addObject(passengerRouteStart);
         }
     });
@@ -118,37 +120,6 @@
         return map.screenToGeo(event.currentPointer.viewportX, event.currentPointer.viewportY);
     }
 
-    function getCustomMarker(lat, lng, iconText, itemName, category, ic, sourceId) {
-        // Define a variable holding SVG mark-up that defines an icon image:
-        var markupTemplate = '<svg xmlns="http://www.w3.org/2000/svg" width="28px" height="36px"><path d="M 19 31 C 19 32.7 16.3 34 13 34 C 9.7 34 7 32.7 7 31 C 7 29.3 9.7 28 13 28 C 16.3 28 19 29.3 19 31 Z" fill="#000" fill-opacity=".2"/><path d="M 13 0 C 9.5 0 6.3 1.3 3.8 3.8 C 1.4 7.8 0 9.4 0 12.8 C 0 16.3 1.4 19.5 3.8 21.9 L 13 31 L 22.2 21.9 C 24.6 19.5 25.9 16.3 25.9 12.8 C 25.9 9.4 24.6 6.1 22.1 3.8 C 19.7 1.3 16.5 0 13 0 Z" fill="#fff"/><path d="M 13 2.2 C 6 2.2 2.3 7.2 2.1 12.8 C 2.1 16.1 3.1 18.4 5.2 20.5 L 13 28.2 L 20.8 20.5 C 22.9 18.4 23.8 16.2 23.8 12.8 C 23.6 7.07 20 2.2 13 2.2 Z" fill="#18d"/><text x="13" y="19" font-size="12pt" font-weight="bold" text-anchor="middle" fill="#fff">${text}</text></svg>';
-
-        // Set your text here.
-        var text = iconText;
-
-        var markup = markupTemplate.replace('${text}', text);
-
-        // Create an icon, an object holding the latitude and longitude, and a marker:
-        var icon;
-        if (ic != null) icon = new H.map.Icon(ic); else icon = new H.map.Icon(markup);
-
-
-        var marker = new H.map.Marker({lat: lat, lng: lng}, {icon: icon});
-        marker.setData({'title': itemName, 'category': category, 'source_id': sourceId});
-
-        marker.addEventListener('tap', function (e) {
-            var spatial = e.target;
-            // Output meta data for the spatial object to the console:
-            var bubbleContent = '<b style="font-size:8px;">' + e.target.getData()['title'] + '</b><br/>' +
-                '<b style="font-size:8px;">' + e.target.getData()['category'] + '</b>';
-
-            var bubble = new H.ui.InfoBubble({
-                lng: spatial.getPosition().lng,
-                lat: spatial.getPosition().lat
-            }, {content: bubbleContent});
-            ui.addBubble(bubble);
-        });
-        return marker;
-    }
 
     function setInput(inputId, value) {
 
@@ -161,7 +132,7 @@
     }
 
 
-    function addPolygonToMap(polygon, customStyle, removeBuffered) {
+    function addPolygonToMap(polygon, customStyle, removeBuffered, isIntersectionArea) {
 
         if (bufferedRoutePolygon != null)
             if (removeBuffered)
@@ -173,6 +144,10 @@
         });
 
         bufferedRoutePolygon = new H.map.Polygon(strip, {style: customStyle});
+
+        if (isIntersectionArea)
+            intersectionAreaPolygon = polygon;
+
         // Add the polygon and marker to the map:
         map.addObject(bufferedRoutePolygon);
         // Center and zoom the map so that the whole isoline polygon is
@@ -180,68 +155,12 @@
         map.setViewBounds(bufferedRoutePolygon.getBounds());
     }
 
-    $("#drawBufferedAreaBtn").click(function () {
-        var radiusOfBuffer = $('#radiusOfBufferInput').val();
-        if (radiusOfBuffer == null) alert('You should specify radius of buffer area !');
-
-        $.ajax({
-            url: '/analyze/route/buffer',
-            type: 'POST',
-            data: JSON.stringify({'buffer': radiusOfBuffer, 'routeShapeA': driverRouteShape}),
-            success: function (result) {
-                var items = result.items;
-                var customStyle = {
-                    strokeColor: 'blue',
-                    fillColor: 'rgba(232, 240, 247, 0.5',
-                    lineWidth: 2,
-                    lineCap: 'square',
-                    lineJoin: 'bevel'
-                };
-                bufferedRouteShape = items;
-                addPolygonToMap(items, customStyle, true);
-            },
-            error: function (result) {
-                alert("Something is not OK")
-            },
-        });
-    });
-
-    $("#findPlacesWithinAreaBtn").click(function () {
-        if (bufferedRoutePolygon == null) alert('You should draw area first !');
-        $.ajax({
-            url: '/analyze/route/buffer/places',
-            type: 'POST',
-            data: JSON.stringify({'buffered_area': bufferedRouteShape}),
-            success: function (result) {
-                foundPlacesSourceIdList.clear;
-                addPlacesToMap(result.items)
-            },
-            error: function (result) {
-                alert("Something is not OK")
-            },
-        });
-    });
-
-    $("#drawIsolinesOfPlacesBtn").click(function () {
-        var selected_modes = getSelectedValuesFromSelectPicker('.range-selectpicker'),
-            range = getIsolineRangesFromSelecteds(selected_modes);
-        $.ajax({
-            url: '/analyze/places/isolines',
-            type: 'POST',
-            data: JSON.stringify({'source_ids': foundPlacesSourceIdList, 'ranges': range}),
-            success: function (result) {
-
-            },
-            error: function (result) {
-                alert("Something is not OK")
-            },
-        });
-    });
 
     function addPlacesToMap(result) {
         result.forEach(function (item) {
-            var marker = getCustomMarker(item.position[0], item.position[1], 'P', item.name, item.source_id);
+            var marker = getCustomMarker(item.position[0], item.position[1], 'P', item.name, item.category, null, item.source_id);
             foundPlacesSourceIdList.push(item.source_id);
+            marker.getData()['source_id'] = item.source_id;
             group.addObject(marker);
         });
     }
@@ -266,7 +185,9 @@
         return modeString.substring(0, modeString.length - 1);
     }
 
-    function getCustomMarker(lat, lng, iconText, itemName, category, ic) {
+    function getCustomMarker(lat, lng, iconText, itemName, category, ic, source_id) {
+        console.log('heeeee');
+        console.log(source_id);
         // Define a variable holding SVG mark-up that defines an icon image:
         var markupTemplate = '<svg xmlns="http://www.w3.org/2000/svg" width="28px" height="36px"><path d="M 19 31 C 19 32.7 16.3 34 13 34 C 9.7 34 7 32.7 7 31 C 7 29.3 9.7 28 13 28 C 16.3 28 19 29.3 19 31 Z" fill="#000" fill-opacity=".2"/><path d="M 13 0 C 9.5 0 6.3 1.3 3.8 3.8 C 1.4 7.8 0 9.4 0 12.8 C 0 16.3 1.4 19.5 3.8 21.9 L 13 31 L 22.2 21.9 C 24.6 19.5 25.9 16.3 25.9 12.8 C 25.9 9.4 24.6 6.1 22.1 3.8 C 19.7 1.3 16.5 0 13 0 Z" fill="#fff"/><path d="M 13 2.2 C 6 2.2 2.3 7.2 2.1 12.8 C 2.1 16.1 3.1 18.4 5.2 20.5 L 13 28.2 L 20.8 20.5 C 22.9 18.4 23.8 16.2 23.8 12.8 C 23.6 7.07 20 2.2 13 2.2 Z" fill="#18d"/><text x="13" y="19" font-size="12pt" font-weight="bold" text-anchor="middle" fill="#fff">${text}</text></svg>';
 
@@ -281,13 +202,14 @@
 
 
         var marker = new H.map.Marker({lat: lat, lng: lng}, {icon: icon});
-        marker.setData({'title': itemName, 'category': category});
+        marker.setData({'title': itemName, 'category': category, 'source_id': source_id});
 
         marker.addEventListener('tap', function (e) {
             var spatial = e.target;
             // Output meta data for the spatial object to the console:
             var bubbleContent = '<b style="font-size:8px;">' + e.target.getData()['title'] + '</b><br/>' +
-                '<b style="font-size:8px;">' + e.target.getData()['category'] + '</b>';
+                '<b style="font-size:8px;">' + e.target.getData()['category'] + '</b>' +
+                '<b style="font-size:8px;">' + e.target.getData()['source_id'] + '</b>';
 
             var bubble = new H.ui.InfoBubble({
                 lng: spatial.getPosition().lng,
@@ -296,6 +218,36 @@
             ui.addBubble(bubble);
         });
         return marker;
+    }
+
+    var foundPlaces = [];
+
+    function updateMarker(source_id) {
+        var groupObjects = group.getObjects();
+        groupObjects.forEach(function (object) {
+            if (object instanceof H.map.Marker) {
+                if (object.getData()) {
+                    if (object.getData()['category'] != 'A')
+                        if (object.getData()['source_id'] == source_id) {
+                            foundPlaces.push(object);
+                        }
+                }
+            }
+        });
+    }
+
+    function updateMarkers(source_id_list) {
+        console.log(source_id_list);
+        source_id_list.forEach(function (id) {
+            updateMarker(id);
+        });
+        group.getObjects().forEach(function (ob) {
+            if ((foundPlaces.indexOf(ob) == -1)) {
+                group.removeObject(ob);
+            }
+        });
+
+        console.log(foundPlaces);
     }
 
     var isolineParameters = {
@@ -362,9 +314,9 @@
         map.setViewBounds(isolinePolygon.getBounds());
     };
 
-    $("#removeOuterOnesBtn").click(function () {
+    $("#findIntersectedAreaBtn").click(function () {
         $.ajax({
-            url: '/analyze/filter',
+            url: '/analyze/intersectionArea',
             type: 'POST',
             data: JSON.stringify({'isoline_area': lastPassengerIsolineShape, 'buffered_area': bufferedRouteShape}),
             success: function (result) {
@@ -377,9 +329,88 @@
                     lineCap: 'square',
                     lineJoin: 'bevel'
                 };
-                addPolygonToMap(shape, customStyle, false);
+                addPolygonToMap(shape, customStyle, false, true);
                 $("#placesDiv").removeClass('hidden');
-                
+                $("#findPlacesWithinIntersectedAreaDiv").removeClass('hidden');
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
+    });
+
+    $("#findPlacesWithinIntersectedAreaBtn").click(function () {
+        console.log(intersectionAreaPolygon);
+        $.ajax({
+            url: '/analyze/intersectionArea/places',
+            type: 'POST',
+            data: JSON.stringify({'intersected_area': intersectionAreaPolygon}),
+            success: function (result) {
+                foundPlacesSourceIdList.clear;
+                addPlacesToMap(result.items)
+            },
+            error: function (result) {
+                alert("Something is not OK");
+            },
+        });
+    });
+
+    $("#drawBufferedAreaBtn").click(function () {
+        var radiusOfBuffer = $('#radiusOfBufferInput').val();
+        if (radiusOfBuffer == null) alert('You should specify radius of buffer area !');
+
+        $.ajax({
+            url: '/analyze/route/buffer',
+            type: 'POST',
+            data: JSON.stringify({'buffer': radiusOfBuffer, 'routeShapeA': driverRouteShape}),
+            success: function (result) {
+                var items = result.items;
+                var customStyle = {
+                    strokeColor: 'blue',
+                    fillColor: 'rgba(232, 240, 247, 0.5',
+                    lineWidth: 2,
+                    lineCap: 'square',
+                    lineJoin: 'bevel'
+                };
+                bufferedRouteShape = items;
+                addPolygonToMap(items, customStyle, true, false);
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
+    });
+
+    $("#findPlacesWithinAreaBtn").click(function () {
+        if (bufferedRoutePolygon == null) alert('You should draw area first !');
+        $.ajax({
+            url: '/analyze/route/buffer/places',
+            type: 'POST',
+            data: JSON.stringify({'buffered_area': bufferedRouteShape}),
+            success: function (result) {
+                foundPlacesSourceIdList.clear;
+                addPlacesToMap(result.items)
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
+    });
+
+    $("#findAccessiblePlacesForDriverBtn").click(function () {
+        var selected_modes = getSelectedValuesFromSelectPicker('.detourrange-selectpicker'),
+            range = getIsolineRangesFromSelecteds(selected_modes);
+        $.ajax({
+            url: '/analyze/intersectionArea/availablePlaces',
+            type: 'POST',
+            data: JSON.stringify({
+                'source_ids': foundPlacesSourceIdList,
+                'range': range,
+                'driver_route': driverRouteShape
+            }),
+            success: function (result) {
+                console.log(result.available_place_id_list.length);
+                updateMarkers(result.available_place_id_list);
             },
             error: function (result) {
                 alert("Something is not OK")
