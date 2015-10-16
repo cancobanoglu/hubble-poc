@@ -197,7 +197,7 @@ def get_intersection_of_polygons():
     polygon1 = response_body.get('polygon1')
     polygon2 = response_body.get('polygon2')
 
-    intersect_poly = get_intersection_of_polygons(polygon1, polygon2)
+    intersect_poly = overlap_polygon(polygon1, polygon2)
     resp = dict()
     item = {'intersectPoly': intersect_poly}
     resp['item'] = item

@@ -441,7 +441,7 @@
         'quality': '1'
     }
 
-    var isoline1Polygon, isoline2Polygon;
+    var isoline1Polygon, isoline2Polygon, isoline1Coords, isoline2Coords;
 
     var onIsolineResult = function (result) {
         var isolineCoords = result.Response.isolines[0].value,
@@ -468,11 +468,11 @@
     };
 
     var onIsoline1Result = function (result) {
-        var isolineCoords = result.Response.isolines[0].value,
+        isoline1Coords = result.Response.isolines[0].value,
             strip = new H.geo.Strip();
 
         // Add the returned isoline coordinates to a strip:
-        isolineCoords.forEach(function (coords) {
+        isoline1Coords.forEach(function (coords) {
             strip.pushLatLngAlt.apply(strip, coords.split(','));
         });
         // Create a polygon and a marker representing the isoline:
@@ -489,18 +489,33 @@
         // in the viewport:
         map.setViewBounds(isoline1Polygon.getBounds());
 
-        if (isoline2Polygon != null) {
-         // TODO
+        if (isoline2Coords != null) {
+         $.ajax({
+            url: '/analyze/intersection/polygon',
+            type: 'POST',
+            data: JSON.stringify({'polygon1': isoline1Coords, 'polygon2': isoline2Coords}),
+            success: function (result) {
+                // TODO merf
+                console.log(result.item.intersectPoly);
+                map.addObjects([result.item.intersectPoly]);
+                if (result.success == false) {
+                    alert("asdasa");
+                }
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
         }
     };
 
     var onIsoline2Result = function (result) {
-        var isolineCoords = result.Response.isolines[0].value,
+        isoline2Coords = result.Response.isolines[0].value,
             strip = new H.geo.Strip(),
             isoline2Polygon;
 
         // Add the returned isoline coordinates to a strip:
-        isolineCoords.forEach(function (coords) {
+        isoline2Coords.forEach(function (coords) {
             strip.pushLatLngAlt.apply(strip, coords.split(','));
         });
         // Create a polygon and a marker representing the isoline:
@@ -517,8 +532,23 @@
         // in the viewport:
         map.setViewBounds(isoline2Polygon.getBounds());
 
-        if (isoline1Polygon != null) {
-         // TODO
+        if (isoline1Coords != null) {
+         $.ajax({
+            url: '/analyze/intersection/polygon',
+            type: 'POST',
+            data: JSON.stringify({'polygon1': isoline1Coords, 'polygon2': isoline2Coords}),
+            success: function (result) {
+            // TODO merf
+                console.log(result.item.intersectPoly);
+                map.addObjects([result.item.intersectPoly]);
+                if (result.success == false) {
+                    alert("asdasa");
+                }
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
         }
     };
 
@@ -551,6 +581,8 @@
         console.log("distance = " + distancePedestrianRoute);
 
         isoline1Polygon = null; isoline2Polygon = null;
+        isoline1Coords = null; isoline2Coords = null;
+
         // Get an instance of the enterprise routing service:
         var enterpriseRouter = platform.getEnterpriseRoutingService();
         // Call the Enterprise Routing API to calculate an isoline:
@@ -569,7 +601,6 @@
                 alert(error.message);
             }
         );
-
     });
 
     $("#drawIsochroneBtn").click(function () {

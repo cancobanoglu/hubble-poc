@@ -118,5 +118,5 @@ def distance_between_two_points(lat1, lon1, lat2, lon2):
 
 
 def overlap_polygon(polygon1, polygon2):
-    return polygon1.intersects(polygon2)
+    return make_polygon(polygon1).intersection(make_polygon(polygon2))
 
