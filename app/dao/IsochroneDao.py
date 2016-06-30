@@ -1,3 +1,5 @@
+from geoalchemy2.shape import to_shape
+
 __author__ = 'cancobanoglu'
 import db
 from models import PoiIsochrones
@@ -36,3 +38,11 @@ class IsochroneDao:
             print(e.message)
 
         return []
+
+    def find_by_id(self, place_id):
+        print place_id
+        q = self.session.query(PoiIsochrones).filter(PoiIsochrones.source_id == place_id)
+        obj = q.first()
+        return obj
+
+

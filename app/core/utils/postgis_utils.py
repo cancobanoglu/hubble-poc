@@ -49,5 +49,16 @@ def intersects_clause(included_ids, geom_column, route_wkt):
     return clause
 
 
+def find_places_of_intersected_ones(included_ids, geom_column, route_wkt):
+    query = "SELECT * FROM poi_place WHERE here_id in (%s)"
+
+    sub_clause = "SELECT source_id from poi_isoline " \
+                 "where source_id in (%s) " \
+                 "AND ST_Intersects(%s, ST_GeographyFromText('%s'))" % (
+                     remove_brackets_from_str_array(included_ids), geom_column, route_wkt)
+
+    return query % (sub_clause)
+
+
 def remove_brackets_from_str_array(array):
     return ", ".join(repr(str(e)) for e in array)

@@ -5,8 +5,11 @@
 (function () {
     $('select').selectpicker();
     var colors = ['blue', 'green', 'red', 'grey', '#FF4433', '#CC0022', '#B00022', '#180022', '#FA0022', '#E5FFCC'];
-
+    var colorRed = 'red';
+    var colorBlue = 'blue';
     var intersectionAreaPolygon;
+    var radiusOfCircle;
+    var intersectionPointLat, intersectionPointLong;
 
     var platform = new H.service.Platform({
         'app_id': 'bkXkAirxQ6lW0e5DdpqA',
@@ -32,9 +35,10 @@
 
     // Add the group object to the map:
     map.addObject(group);
-    var driverRouteStart, driverRouteEnd, passengerRouteStart, passengerRouteEnd, driverRouteShape, passengerRouteShape,
+    var driverRouteStart, driverRouteEnd, passengerRouteStart, passengerRouteEnd, driverRouteShape, passengerRouteShape, passangerRouteLine,
         bufferedRoutePolygon,
-        bufferedRouteShape;
+        bufferedRouteShape,
+        circlePolygon;
 
     var routingParametersDriver = {
         // The routing mode:
@@ -86,6 +90,52 @@
         }
     };
 
+    var onResultPassengerRouteCallback = function (result) {
+        var route,
+            routeShape,
+            startPoint,
+            endPoint,
+            strip;
+        if (result.response.route) {
+            // Pick the first route from the response:
+            route = result.response.route[0];
+            // Pick the route's shape:
+            routeShape = route.shape;
+            // Create a strip to use as a point source for the route line
+            strip = new H.geo.Strip();
+            // Push all the points in the shape into the strip:
+            routeShape.forEach(function (point) {
+                var parts = point.split(',');
+                strip.pushLatLngAlt(parts[0], parts[1]);
+            });
+            passengerRouteShape = routeShape;
+            setInput('routeShapeB', routeShape);
+            // Retrieve the mapped positions of the requested waypoints:
+            startPoint = route.waypoint[0].mappedPosition;
+            endPoint = route.waypoint[1].mappedPosition;
+            // Create a polyline to display the route:
+            passangerRouteLine = new H.map.Polyline(strip, {
+                style: {strokeColor: colorBlue, lineWidth: 7},
+                arrows: {fillColor: 'white', frequency: 2, width: 0.5, length: 0.7}
+            });
+            //// Create a marker for the start point:
+            //var startMarker = new H.map.Marker({
+            //    lat: startPoint.latitude,
+            //    lng: startPoint.longitude
+            //});
+            //// Create a marker for the end point:
+            //var endMarker = new H.map.Marker({
+            //    lat: endPoint.latitude,
+            //    lng: endPoint.longitude
+            //});
+
+            // Add the route polyline and the two markers to the map:
+            map.addObjects([passangerRouteLine]);
+            // Set the map's viewport to make the whole route visible:
+            map.setViewBounds(passangerRouteLine.getBounds());
+        }
+    };
+
     map.addEventListener('tap', function (event) {
         var click_coords = eventToLocation(event);
 
@@ -102,9 +152,39 @@
             drawDriverRoute();
 
         } else if (passengerRouteStart == null) {
-            passengerRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'YB', 'Yolcunun başlangıç noktası', 'A', 'http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Walking-icon.png', null);
+            passengerRouteStart = getCustomMarker(click_coords.lat, click_coords.lng, 'YB', 'Yolcunun başlangıç noktası', '', 'http://icons.iconarchive.com/icons/icons8/windows-8/32/Sports-Walking-icon.png');
             group.addObject(passengerRouteStart);
+            routingParametersDriver.waypoint0 = passengerRouteStart.getPosition().lat + ',' + passengerRouteStart.getPosition().lng;
+            setInput('routeStartB', routingParametersDriver.waypoint0);
+        } else if (passengerRouteEnd == null) {
+            passengerRouteEnd = new H.map.Marker(click_coords);
+            group.addObject(passengerRouteEnd);
+            routingParametersDriver.waypoint1 = passengerRouteEnd.getPosition().lat + ',' + passengerRouteEnd.getPosition().lng;
+            setInput('routeEndB', routingParametersDriver.waypoint1);
+            drawPassengerRoute();
         }
+    });
+
+    $("#calculateIntersectionBtn").click(function () {
+        //var routeShapeA = $('#routeShapeA').val();
+        //var routeShapeB = $('#routeShapeB').val();
+
+        $.ajax({
+            url: '/analyze/intersection',
+            type: 'POST',
+            data: JSON.stringify({'routeShapeA': driverRouteShape, 'routeShapeB': passengerRouteShape}),
+            success: function (result) {
+                console.log(result.first_intersected_point.lat);
+                putFirstIntersectedPoint(result.first_intersected_point.lat, result.first_intersected_point.lng);
+                if (result.success == false) {
+                    alert("asdasa");
+                }
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
+
     });
 
     function drawDriverRoute() {
@@ -115,6 +195,16 @@
                 alert(error.message);
             });
     }
+
+    function drawPassengerRoute() {
+        router.calculateRoute(
+            routingParametersDriver,
+            onResultPassengerRouteCallback,
+            function (error) {
+                alert(error.message);
+            });
+    }
+
 
     function eventToLocation(event) {
         return map.screenToGeo(event.currentPointer.viewportX, event.currentPointer.viewportY);
@@ -132,7 +222,8 @@
     }
 
 
-    function addPolygonToMap(polygon, customStyle, removeBuffered, isIntersectionArea) {
+    function addPolygonToMap(polygon, customStyle, removeBuffered, isIntersectionArea, isCircle) {
+        var localPolygon;
 
         if (bufferedRoutePolygon != null)
             if (removeBuffered)
@@ -143,16 +234,22 @@
             strip.pushLatLngAlt.apply(strip, coords.split(','));
         });
 
-        bufferedRoutePolygon = new H.map.Polygon(strip, {style: customStyle});
+        if (isCircle) {
+            circlePolygon = new H.map.Polygon(strip, {style: customStyle});
+            localPolygon = circlePolygon;
+        } else {
+            bufferedRoutePolygon = new H.map.Polygon(strip, {style: customStyle});
+            localPolygon = bufferedRoutePolygon;
+        }
 
         if (isIntersectionArea)
             intersectionAreaPolygon = polygon;
 
         // Add the polygon and marker to the map:
-        map.addObject(bufferedRoutePolygon);
+        map.addObject(localPolygon);
         // Center and zoom the map so that the whole isoline polygon is
         // in the viewport:
-        map.setViewBounds(bufferedRoutePolygon.getBounds());
+        map.setViewBounds(localPolygon.getBounds());
     }
 
 
@@ -161,6 +258,28 @@
             var marker = getCustomMarker(item.position[0], item.position[1], 'P', item.name, item.category, null, item.source_id);
             foundPlacesSourceIdList.push(item.source_id);
             marker.getData()['source_id'] = item.source_id;
+            marker.addEventListener('tap', function (e) {
+                $.ajax({
+                    url: '/analyze/isoline/' + e.target.getData()['source_id'],
+                    type: 'GET',
+                    success: function (result) {
+                        console.log(result.shapes);
+                        var customStyle = {
+                            strokeColor: 'red',
+                            fillColor: 'rgba(255, 153, 153, 0.1',
+                            lineWidth: 1,
+                            lineCap: 'square',
+                            lineJoin: 'bevel'
+                        };
+                        addPolygonToMap(result.shapes.one_min_shape, customStyle, false, false);
+                        //addPolygonToMap(result.shapes.three_min_shape, customStyle, false, false);
+                        //addPolygonToMap(result.shapes.five_min_shape, customStyle, true, false);
+                    },
+                    error: function (result) {
+                        alert("Something is not OK");
+                    },
+                });
+            });
             group.addObject(marker);
         });
     }
@@ -324,12 +443,12 @@
                 var places = result.places;
                 var customStyle = {
                     strokeColor: 'black',
-                    fillColor: 'rgba(232, 240, 247, 0.5',
+                    fillColor: 'rgba(232, 240, 247, 0.1',
                     lineWidth: 4,
                     lineCap: 'square',
                     lineJoin: 'bevel'
                 };
-                addPolygonToMap(shape, customStyle, false, true);
+                addPolygonToMap(shape, customStyle, false, true, true);
                 $("#placesDiv").removeClass('hidden');
                 $("#findPlacesWithinIntersectedAreaDiv").removeClass('hidden');
             },
@@ -373,7 +492,7 @@
                     lineJoin: 'bevel'
                 };
                 bufferedRouteShape = items;
-                addPolygonToMap(items, customStyle, true, false);
+                addPolygonToMap(items, customStyle, true, false,true);
             },
             error: function (result) {
                 alert("Something is not OK")
@@ -417,4 +536,127 @@
             },
         });
     });
+
+    $("#suggestBtn").click(function () {
+        var selected_modes = getSelectedValuesFromSelectPicker('.detourrange-selectpicker'),
+            range = getIsolineRangesFromSelecteds(selected_modes);
+        var radiusOfBuffer = $('#radiusOfBufferInput').val();
+        $.ajax({
+            url: '/analyze/suggest',
+            type: 'POST',
+            data: JSON.stringify({
+                'driverRouteShape': driverRouteShape,
+                'passengerStartPoint': [passengerRouteStart.getPosition().lat, passengerRouteStart.getPosition().lng],
+                'intersectionPoint' : [intersectionPointLat, intersectionPointLong],
+                'detourRange': range,
+                'radiusOfBuffer': radiusOfBuffer
+            }),
+            success: function (result) {
+                addPlacesToMap(result.items);
+            },
+            error: function (result) {
+
+            },
+        });
+    });
+
+
+    $("#drawCircleBtn").click(function () {
+        $.ajax({
+            url: '/analyze/circle',
+            type: 'POST',
+            data: JSON.stringify({
+                'passengerStartPoint': [passengerRouteStart.getPosition().lat, passengerRouteStart.getPosition().lng],
+                'intersectionPoint': [intersectionPointLat, intersectionPointLong]
+            }),
+            success: function (result) {
+                var radius = result.radius;
+                console.log(radius);
+                addPolygonToMap(result.shape, null, false, false, true);
+
+                radiusOfCircle = radius;
+                map.addObject(circle);
+            },
+            error: function (result) {
+
+            },
+        });
+    });
+
+    function putFirstIntersectedPoint(latitude, longitude) {
+
+        intersectionPointLat = latitude;
+        intersectionPointLong = longitude;
+
+        $.ajax({
+            url: '/analyze/intersection/distance',
+            type: 'POST',
+            data: JSON.stringify({
+                'intersectionPointLat': intersectionPointLat,
+                'intersectionPointLng': intersectionPointLong,
+                'passengerStartPointLat': passengerRouteStart.getPosition().lat,
+                'passengerEndPointLng': passengerRouteStart.getPosition().lng
+            }),
+            success: function (result) {
+                distancePedestrianRoute = Math.round(result.item.distancePedestrianRoute * 100) / 100;
+                setInput('distancePedestrianRoute', distancePedestrianRoute + " meters");
+                if (result.success == false) {
+                    alert("result.success is false");
+                }
+            },
+            error: function (result) {
+                alert("Something is not OK")
+            },
+        });
+
+        var ic = new H.map.Icon('http://download.st.vcdn.nokia.com/p/d/places2_stg/icons/categories/21.icon');
+
+        intersectionPointMarker = new H.map.Marker({
+            lat: latitude,
+            lng: longitude
+        }, {icon: ic});
+
+
+        intersectionPointMarker.draggable = true;
+        intersectionPointMarker.addEventListener('dragstart', function (e) {
+            //handle drag start here
+            console.log(e);
+        });
+        intersectionPointMarker.addEventListener('drag', function (e) {
+            //handle drag here
+        });
+        intersectionPointMarker.addEventListener('dragend', function (e) {
+            var spatial = e.target;
+            intersectionPointLat = spatial.getPosition().lat;
+            intersectionPointLong = spatial.getPosition().lng;
+        });
+
+        map.addEventListener('dragstart', function (ev) {
+            var target = ev.target;
+            if (target instanceof H.map.Marker) {
+                behavior.disable();
+            }
+        }, false);
+
+        map.addEventListener('dragend', function (ev) {
+            var target = ev.target;
+            if (target instanceof mapsjs.map.Marker) {
+                behavior.enable();
+            }
+        }, false);
+
+        map.addEventListener('drag', function (ev) {
+            var target = ev.target,
+                pointer = ev.currentPointer;
+            if (target instanceof mapsjs.map.Marker) {
+                var newPosition = map.screenToGeo(pointer.viewportX, pointer.viewportY);
+                target.setPosition(newPosition);
+            }
+        }, false);
+
+        group.addObject(intersectionPointMarker);
+        map.setCenter({lat: latitude, lng: longitude});
+        map.setZoom(15);
+
+    }
 })();

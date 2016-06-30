@@ -18,8 +18,8 @@
     var polygon5MinsDriver;
 
     var platform = new H.service.Platform({
-        'app_id': 'bkXkAirxQ6lW0e5DdpqA',
-        'app_code': 'sW742GORuOJB1BR9j19_3A'
+        'app_id': 'GuVDwPpoayU4MnlxA0pm',
+        'app_code': 'RLcjfyAijrFVl9cUff7GtQ'
     });
 
 
@@ -438,7 +438,8 @@
     var isolineParameters = {
         'mode': '',
         'start': '',
-        'quality': '1'
+        'quality': '1',
+        'resolution':100
     }
 
     var isoline1Polygon, isoline2Polygon;
@@ -532,9 +533,8 @@
             'mode': 'fastest;car;traffic:enabled',
             'start': '',
             'quality': '1',
-            'time': 'PT0H5M'
-//            'rangetype': 'distance',
-//            'distance': 1000
+            'time': 'PT0H5M',
+            'resolution':100
         }
 
         var isoline2Params = {
@@ -542,6 +542,7 @@
             'start': '',
             'quality': '1',
             'rangetype': 'distance',
+            'resolution':100
 
         }
         isoline1Params.start = intersectionPointLat + ',' + intersectionPointLong;

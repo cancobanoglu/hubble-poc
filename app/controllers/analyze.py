@@ -1,6 +1,6 @@
 from shapely.geometry.point import asPoint
 from sqlalchemy.sql.functions import func
-from app.core.utils.postgis_utils import intersects_clause
+from app.core.utils.postgis_utils import intersects_clause, find_places_of_intersected_ones
 
 from json import dumps
 import json
@@ -96,11 +96,7 @@ def buffered_route_polygon():
     route_shape_driver = response_body.get('routeShapeA')
 
     line_string_driver = make_linestring(route_shape_driver)
-    buffered_route_clause = 'SELECT ' + buffer_clause(line_string_driver, buff)
-
-    result = db.get_connection().execute(buffered_route_clause)
-    data = result.fetchone()
-    polygon_shape = to_shape(data[0])
+    polygon_shape = create_buffered_polygon_of_line(line_string_driver, buff)
 
     polygon = []
     for point_tuple in polygon_shape.exterior.coords:
@@ -143,13 +139,17 @@ def find_available_places_within_intersected_area():
     print line_string_driver
 
     if _range == u'1':
-        pass
+        query = intersects_clause(source_ids, 'driver_one_min_isoline', line_string_driver)
+        result = db.get_connection().execute(query)
+        return get_response_for_available_places(result)
     elif _range == u'3':
         query = intersects_clause(source_ids, 'driver_three_min_isoline', line_string_driver)
         result = db.get_connection().execute(query)
         return get_response_for_available_places(result)
     elif _range == u'5':
-        pass
+        query = intersects_clause(source_ids, 'driver_five_min_isoline', line_string_driver)
+        result = db.get_connection().execute(query)
+        return get_response_for_available_places(result)
 
 
 def get_response_for_available_places(fetched_results):
@@ -160,6 +160,20 @@ def get_response_for_available_places(fetched_results):
 
     resp = dict()
     resp['available_place_id_list'] = places
+
+    response.content_type = 'application/json'
+    return dumps(resp)
+
+
+def get_response_for_places(place_list):
+    items = []
+    for place in place_list:
+        items.append(
+            {'position': [place.lat, place.lng], 'name': place.name, 'category': place.category, 'type': 'PLACE',
+             'source_id': place.here_id})
+
+    resp = dict()
+    resp['items'] = items
 
     response.content_type = 'application/json'
     return dumps(resp)
@@ -177,9 +191,7 @@ def filter_remove_outer_places():
 
     intersected_area = buffered_route_polygon.intersection(isoline_polygon)
 
-    polygon = []
-    for point_tuple in intersected_area.exterior.coords:
-        polygon.append(str(point_tuple[0]) + ',' + str(point_tuple[1]))
+    polygon = to_polygon_tuple_array(intersected_area.exterior.coords)
 
     clause = contained_clause_within(intersected_area.wkt)
 
@@ -197,12 +209,16 @@ def filter_remove_outer_places():
     return dumps(resp)
 
 
+def find_places_within_polygon(polygon):
+    clause = contained_clause_within(polygon.wkt)
+    data = db.get_connection().execute(clause)
+    return data
+
+
 def get_response_places_within_area(area_shape):
     polygon = make_polygon(area_shape)
 
-    clause = contained_clause_within(polygon.wkt)
-
-    data = db.get_connection().execute(clause)
+    data = find_places_within_polygon(polygon)
 
     items = []
     for row in data:
@@ -212,6 +228,28 @@ def get_response_places_within_area(area_shape):
     resp['items'] = items
 
     return resp
+
+
+@route("/analyze/isoline/<place_id>")
+def get_isolines(place_id):
+    isoline = isochrone_dao.find_by_id(place_id)
+
+    one_min_polygon = to_shape(isoline.driver_one_min_isoline)
+    three_min_polygon = to_shape(isoline.driver_three_min_isoline)
+    five_min_polygon = to_shape(isoline.driver_five_min_isoline)
+
+    one_min_polygon_tuple_arr = to_polygon_tuple_array(one_min_polygon.exterior.coords)
+    three_min_polygon_tuple_arr = to_polygon_tuple_array(three_min_polygon.exterior.coords)
+    five_min_polygon_tuple_arr = to_polygon_tuple_array(five_min_polygon.exterior.coords)
+
+    shapes = {'one_min_shape': one_min_polygon_tuple_arr, 'three_min_shape': three_min_polygon_tuple_arr,
+              'five_min_shape': five_min_polygon_tuple_arr}
+
+    resp = dict()
+    resp['shapes'] = shapes
+
+    response.content_type = 'application/json'
+    return dumps(resp)
 
 
 @route("/analyze/intersection/distance", method='POST')
@@ -232,16 +270,6 @@ def distance_to_intersection():
     return dumps(resp)
 
 
-
-@route("/analyze/places/isolines", method='POST')
-def get_isoline_of_places():
-    response_body = json.load(request.body)
-    source_ids = response_body.get('source_ids')
-    range = response_body.get('range')
-
-    isoline_list = isochrone_dao.find_by_source_ids(source_ids)
-
-
 @route("/analyze/intersection/polygon", method='POST')
 def get_intersection_of_polygons():
     response_body = json.load(request.body)
@@ -256,6 +284,78 @@ def get_intersection_of_polygons():
     response.content_type = 'application/json'
     return dumps(resp)
 
+
+@route("/analyze/suggest", method='POST')
+def suggest_places():
+    response_body = json.load(request.body)
+    route_shape_driver = response_body.get('driverRouteShape')
+    passenger_start_point = response_body.get('passengerStartPoint')
+    intersection_point = response_body.get('intersectionPoint')
+    detour_range = response_body.get('detourRange')
+    radius_buffered_area = response_body.get('radiusOfBuffer')
+
+    # create buffer area using radius
+    line_string_driver = make_linestring(route_shape_driver)
+    buffered_route = create_buffered_polygon_of_line(line_string_driver, radius_buffered_area)
+
+    passenger_point = Point(passenger_start_point[0], passenger_start_point[1])
+    intersection_p = Point(intersection_point[0], intersection_point[1])
+
+    radius_of_circle = distance(passenger_point, intersection_p)
+    circle_polygon = create_circle_polygon(passenger_point, radius_of_circle)
+
+    # find intersections
+    intersected_area_of_circle_and_buffer = circle_polygon.intersection(buffered_route)
+
+    # find places within intersected area
+    places = find_places_within_polygon(intersected_area_of_circle_and_buffer)
+
+    source_ids = object_to_ids(places)
+
+    if detour_range == u'1':
+        query = find_places_of_intersected_ones(source_ids, 'driver_one_min_isoline', line_string_driver)
+        result = db.get_connection().execute(query)
+        return get_response_for_places(result)
+    elif detour_range == u'3':
+        query = find_places_of_intersected_ones(source_ids, 'driver_three_min_isoline', line_string_driver)
+        result = db.get_connection().execute(query)
+        return get_response_for_places(result)
+    elif detour_range == u'5':
+        query = find_places_of_intersected_ones(source_ids, 'driver_five_min_isoline', line_string_driver)
+        result = db.get_connection().execute(query)
+        return get_response_for_places(result)
+
+
+def object_to_ids(places):
+    ids = []
+    for row in places:
+        ids.append(row.here_id)
+
+    return ids
+
+
+@route("/analyze/circle", method='POST')
+def circle_radius():
+    response_body = json.load(request.body)
+    passenger_start_point = response_body.get('passengerStartPoint')
+    intersection_point = response_body.get('intersectionPoint')
+
+    passenger_point = Point(passenger_start_point[0], passenger_start_point[1])
+
+    radius = distance(passenger_point,
+                      Point(intersection_point[0], intersection_point[1]))
+
+    circle_polygon = create_circle_polygon(passenger_point, radius)
+
+    polygon_point_array = to_polygon_tuple_array(circle_polygon.exterior.coords)
+
+    resp = dict()
+
+    resp['radius'] = radius
+    resp['shape'] = polygon_point_array
+
+    response.content_type = 'application/json'
+    return dumps(resp)
 
 #
 # a = buffer_clause(

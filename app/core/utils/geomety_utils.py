@@ -1,3 +1,6 @@
+from geoalchemy2.shape import from_shape
+from shapely.geometry.linestring import LineString
+
 __author__ = 'cancobanoglu'
 
 import pyproj
@@ -9,6 +12,9 @@ from functools import partial
 from shapely.geometry import asLineString, Point
 from shapely.wkt import loads
 from geoalchemy2 import WKTElement
+from app.dao import db
+
+DBSession = db.get_session()
 
 
 def make_linestring(route_shape):
@@ -120,3 +126,53 @@ def distance_between_two_points(lat1, lon1, lat2, lon2):
 def overlap_polygon(polygon1, polygon2):
     return polygon1.intersects(polygon2)
 
+
+def create_buffered_polygon_of_line(line, buffer_radius):
+    buffered_route_clause = 'SELECT ' + buffer_clause(line, buffer_radius)
+
+    result = db.get_connection().execute(buffered_route_clause)
+    data = result.fetchone()
+    polygon_shape = to_shape(data[0])
+
+    return polygon_shape
+
+
+def to_polygon_tuple_array(polygon_exterior_coords):
+    polygon_tuple_array = []
+    for point_tuple in polygon_exterior_coords:
+        polygon_tuple_array.append(str(point_tuple[0]) + ',' + str(point_tuple[1]))
+
+    return polygon_tuple_array
+
+
+def closest_point(lat, lng, linestring=LineString):
+    point = Point(lat, lng)
+    projected_line = linestring.project(point)
+    np = linestring.interpolate(projected_line)
+    print(np)
+
+
+def distance(point_a=Point, point_b=Point):
+    spheroid_string = 'SPHEROID["WGS 84",6378137,298.257223563]'
+    clause = "SELECT ST_Distance_Spheroid(ST_GeomFromText('%s',4326),ST_GeomFromText('%s', 4326),'%s')" % (
+        point_a.wkt, point_b.wkt, spheroid_string)
+    result = db.get_connection().execute(clause)
+    data = result.fetchone()
+    distance_meters = data[0]
+
+    return distance_meters
+
+
+def create_circle_polygon(point, radius):
+    clause = "SELECT ST_AsText(ST_Buffer(ST_GeomFromText('%s',4326)::geography,%s))" % (point.wkt, radius)
+    result = db.get_connection().execute(clause)
+    data = result.fetchone()[0]
+    print data
+    circle_polygon = to_shape(data)
+    return circle_polygon
+
+
+if __name__ == '__main__':
+    pa = Point(41.060920, 28.996140)
+    pb = Point(41.06767133279339, 28.995857535173855)
+    print distance(pa, pb)
